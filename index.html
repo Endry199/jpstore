@@ -17,43 +17,85 @@
     <link rel="preload" href="images/netflix_banner.jpg" as="image">
     <link rel="preload" href="images/codm_banner.jpg" as="image">
     <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+
     <style>
-        /* Estilos para el carrusel - AHORA OCUPANDO TODO EL ANCHO */
-    /* Estilos para el carrusel - MANTENIENDO PROPORCIÓN 1080x432 */
 .carousel-container {
-    width: 100%;
-    /* Eliminamos el height fijo para que sea responsivo */
+    width: 92%; /* Ajuste para dar aire a los lados como en la imagen */
     max-width: 1080px; 
     margin: 0 auto 30px;
     position: relative;
     overflow: hidden;
-    /* Esto mantiene la proporción 1080:432 (432/1080 = 40%) */
-    aspect-ratio: 1080 / 432; 
+    border-radius: 25px; /* Bordes muy redondeados */
+    aspect-ratio: 1080 / 432;
+    box-shadow: 0 4px 15px rgba(0,0,0,0.3); /* Sombra suave para profundidad */
 }
 
 .carousel-slide {
     display: flex;
-    width: 100%; /* Cambiado de 200% a 100% para manejarlo mejor con JS */
+    width: 100%;
     height: 100%;
-    transition: transform 0.5s ease-in-out;
+    transition: transform 0.6s cubic-bezier(0.4, 0, 0.2, 1);
 }
 
 .carousel-slide img {
     width: 100%;
-    height: auto;
-    /* 'contain' asegura que se vea toda la imagen, 'fill' la estira */
-    /* Pero con aspect-ratio en el padre, lo ideal es usar width 100% */
-    object-fit: inherit; 
+    height: 100%;
+    object-fit: cover; /* Asegura que la imagen llene el espacio sin deformarse */
     flex-shrink: 0;
 }
 
-/* Ajuste para móviles: ya no necesitas heights fijos */
-@media (max-width: 768px) {
-    .carousel-container {
-        height: auto; /* El aspect-ratio hará el trabajo */
-    }
+/* Botones laterales (Flechas) */
+.carousel-btn {
+    position: absolute;
+    top: 50%;
+    transform: translateY(-50%);
+    background: rgba(38, 182, 55, 0.7); /* Morado traslúcido como la imagen */
+    color: white;
+    border: none;
+    width: 45px;
+    height: 45px;
+    border-radius: 50%;
+    cursor: pointer;
+    z-index: 10;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 1.2rem;
+    transition: background 0.3s;
 }
-    </style>
+
+.carousel-btn:hover {
+    background: rgba(155, 38, 182, 1);
+}
+
+.carousel-btn.prev { left: 15px; }
+.carousel-btn.next { right: 15px; }
+
+/* Puntos de navegación inferiores */
+.carousel-nav {
+    position: absolute;
+    bottom: 15px;
+    left: 50%;
+    transform: translateX(-50%);
+    display: flex;
+    gap: 8px;
+    z-index: 10;
+}
+
+.carousel-dot {
+    width: 10px;
+    height: 10px;
+    background: rgba(255, 255, 255, 0.5);
+    border-radius: 50%;
+    cursor: pointer;
+    transition: all 0.3s;
+}
+
+.carousel-dot.active {
+    background: #01571c; /* Color resaltado (rosa/fucsia) */
+    transform: scale(1.2);
+}
+</style>
 </head>
 <body>
 
