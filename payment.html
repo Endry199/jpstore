@@ -1,0 +1,1401 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Detalles de Pago - JP STORE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+    <style>
+/* Estilos para el botón de copiar y el mensaje */
+        .copy-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+            flex-wrap: wrap;
+        }
+        .copy-container .wallet-address {
+            display: none; /* Oculta la dirección real */
+        }
+        .copy-button {
+            background-color: var(--primary-color);
+            color: var(--button-text-color);
+            border: none;
+            padding: 8px 15px;
+            border-radius: 5px;
+            cursor: pointer;
+            font-size: 0.9em;
+            transition: background-color 0.3s ease;
+        }
+        .copy-button:hover {
+            background-color: #0056b3;
+        }
+        .copy-feedback {
+            display: none;
+            margin-left: 10px;
+            color: #28a745;
+            font-size: 0.9em;
+            font-weight: bold;
+        }
+        /* Estilo para la etiqueta de la dirección */
+        .address-label {
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        /* Estilo para los nuevos campos de correo y whatsapp */
+        .input-group {
+            margin-bottom: 15px;
+        }
+        .input-group label {
+            display: block;
+            margin-bottom: 5px;
+            font-weight: bold;
+            color: var(--text-color);
+        }
+        .input-group input[type="email"],
+        .input-group input[type="tel"],
+        .input-group input[type="text"], /* Añadido para Binance ID */
+        .input-group input[type="password"] { /* Añadido para Wallet */
+            width: 100%;
+            padding: 10px;
+            border: 1px solid var(--border-color);
+            border-radius: 5px;
+            background-color: var(--input-background);
+            color: var(--text-color);
+            box-sizing: border-box; /* Asegura que el padding no aumente el ancho */
+        }
+        /* Estilo para el mensaje de éxito */
+        .payment-success-message {
+            margin-top: 30px;
+            padding: 20px;
+            background-color: var(--accent-green-light); /* Un color de fondo suave para el éxito */
+            border: 1px solid var(--accent-green);
+            border-radius: 8px;
+            text-align: center;
+            color: var(--accent-green); /* Color del texto */
+        }
+        .payment-success-message h2 {
+            margin-top: 0;
+            color: var(--accent-green);
+        }
+        .payment-success-message p {
+            margin-bottom: 0;
+        }
+        /* Estilos para los pasos */
+        .form-section-step {
+            margin-top: 30px;
+            padding-top: 20px;
+            border-top: 1px solid var(--border-color);
+        }
+        .form-section-step h3 {
+            color: var(--primary-color);
+            margin-bottom: 20px;
+            font-size: 1.3em;
+            text-align: center;
+        }
+        /* Nuevo estilo para el contenedor de la contraseña */
+        .password-container {
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+        .toggle-password {
+            background: none;
+            border: none;
+            color: var(--text-color);
+            cursor: pointer;
+            font-size: 1.1em;
+            padding: 5px;
+        }
+
+        /* 🚀 FIX DE VISUALIZACIÓN DE BOTONES DE PAGO 🚀 */
+        .payment-methods {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); /* Mínimo 140px de ancho */
+            gap: 15px;
+            margin-top: 10px;
+        }
+
+        .payment-method-option input[type="radio"] {
+            display: none; /* Oculta el radio button nativo */
+        }
+
+        .payment-method-option label {
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 15px 10px;
+            border: 2px solid var(--border-color, #ccc);
+            border-radius: 8px;
+            cursor: pointer;
+            text-align: center;
+            transition: all 0.2s ease;
+            height: 100%; /* Para que todos tengan la misma altura */
+            background-color: var(--input-background); /* Asegurar color de fondo */
+        }
+
+        .payment-method-option label:hover {
+            border-color: var(--primary-color, #007bff);
+        }
+
+        .payment-method-option input[type="radio"]:checked + label {
+            border-color: var(--accent-green, #28a745);
+            background-color: var(--accent-green-light, #e9f7ef);
+            color: var(--text-color, #333);
+        }
+
+        .payment-method-option label i {
+            font-size: 2em;
+            margin-bottom: 8px;
+            color: var(--primary-color, #007bff);
+        }
+
+        .payment-method-option input[type="radio"]:checked + label i {
+            color: var(--accent-green, #28a745);
+        }
+        /* ------------------------------------------- */
+        
+        /* ⏰ NUEVOS ESTILOS PARA EL TEMPORIZADOR ⏰ */
+        #payment-timer-container {
+            position: fixed;
+            top: 100px; /* Ajusta la posición vertical */
+            right: 20px;
+            background-color: var( --accent-green); /* Color llamativo de advertencia */
+            color: var(--text-color);
+            padding: 10px 15px;
+            border-radius: 8px;
+            box-shadow: 0 4px 8px rgba(0, 0, 0, 0.1);
+            font-size: 1.1em;
+            font-weight: bold;
+            z-index: 1000; /* Asegura que esté por encima de otros elementos */
+            display: flex;
+            align-items: center;
+            gap: 10px;
+        }
+
+        #payment-timer-container.expired {
+            background-color: #dc3545; /* Rojo para cuando expire */
+            color: white;
+        }
+
+        @media (max-width: 768px) {
+            #payment-timer-container {
+                top: auto;
+                bottom: 20px;
+                right: 50%;
+                transform: translateX(50%);
+                width: 90%;
+                justify-content: center;
+                text-align: center;
+            }
+        }
+        /* --------------------------------------- */
+    </style>
+</head>
+<body>
+    <div id="payment-timer-container" style="display: none;">
+        <i class="fas fa-clock"></i>
+        <span>Tiempo restante para completar el pago: </span>
+        <span id="payment-timer">15:00</span>
+    </div>
+    <header>
+    <div class="header-left">
+        <a href="index.html" class="logo-link">
+            <img src="images/malok_logo.png" alt="JP STORE Logo" class="logo-img">
+        </a>
+    </div>
+    <div class="header-right">
+        
+        <div class="wallet-container" id="wallet-container" style="display:none;"> 
+            <div class="wallet-display">
+                <i class="fas fa-wallet"></i>
+                <span id="virtual-balance">$. --.--</span>
+            </div>
+            <a href="rechargedwallet.html" class="recharge-btn" title="Recargar Saldo">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+        <div class="auth-dropdown" id="auth-dropdown">
+            <button class="auth-btn" id="toggle-login-btn">
+                <i class="fas fa-user-circle"></i>
+                <img src="images/default_user.png" alt="Usuario" class="auth-user-picture" id="auth-user-picture" style="display:none;">
+            </button>
+            
+            <div class="dropdown-content">
+                <a href="#" class="auth-display-name" id="auth-display-name">Iniciar Sesión</a>
+                <hr>
+                
+                <div id="google-login-btn" style="display: block;">
+                    </div>
+                
+                <button id="logout-btn" class="logout-btn" style="display:none;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+
+    <main class="payment-main">
+        <div class="form-container">
+            <h2>Confirmar Recarga y Seleccionar Método de Pago</h2>
+            <div id="transaction-summary" class="transaction-summary">
+            </div>
+
+            <form id="payment-form">
+                <div class="form-section-step">
+                    <h3>Paso 1: Selecciona tu Método de Pago</h3>
+                    <div class="form-group">
+                        <label>Método de Pago:</label>
+                        <div class="payment-methods" id="payment-methods">
+                        </div>
+                    </div>
+                </div>
+
+                <div class="form-section-step">
+                    <h3>Paso 2: Realiza el Pago y Sube tu Comprobante</h3>
+                    <div id="payment-details-form" class="payment-details-form">
+                    </div>
+                </div>
+                
+                <div class="form-section-step">
+                    <h3>Paso 3: Información de Contacto para Notificaciones</h3>
+                    <div class="input-group">
+                        <label for="email">Correo Electrónico (Para notificaciones y factura):</label>
+                        <input type="email" id="email" name="email" placeholder="tu_correo@ejemplo.com" required>
+                    </div>
+
+                    <div class="input-group">
+                        <label for="whatsappNumber">Número de WhatsApp (Para contacto):</label>
+                        <input type="tel" id="whatsappNumber" name="whatsappNumber" placeholder="Ej: 584121234567" required>
+                    </div>
+                </div>
+                <div id="whatsapp-message-container" class="payment-confirmation-message" style="margin-top: 30px; margin-bottom: 20px; text-align: center; display: none;">
+                    <p style="font-size: 1.1em; color: var(--text-color); margin-bottom: 15px;">
+                        ¡Importante! Una vez realizado el pago con el método seleccionado, <strong>envía la captura de tu comprobante y tus datos de TikTok</strong> al siguiente número de WhatsApp para que tu recarga sea procesada rápidamente:
+                    </p>
+                    <a href="https://wa.me/584143187185?text=Hola%2C%20acabo%20de%20realizar%20un%20pago%20para%20recarga%20de%20TikTok.%20Mis%20datos%20de%20TikTok%20son%3A%20%5BAQUI_TUS_DATOS%5D."
+                        class="whatsapp-link"
+                        target="_blank"
+                        style="font-size: 1.1em; padding: 12px 25px;">
+                        <i class="fab fa-whatsapp"></i> Enviar Captura al WhatsApp
+                    </a>
+                    <p class="small-text" style="margin-top: 15px;">
+                        (Por favor, no olvides incluir tus datos de TikTok en el mensaje de WhatsApp).
+                    </p>
+                </div>
+
+                <button type="submit" class="btn-primary" id="finalize-recharge-btn" disabled>Finalizar Recarga</button>
+            </form>
+
+            <div id="success-message-display" class="payment-success-message" style="display: none;">
+                <h2>🎉 ¡Notificación Enviada! 🎉</h2>
+                <p>Hemos recibido tu solicitud de recarga. Te enviaremos un correo de confirmación y la factura virtual una vez que tu recarga sea procesada.</p>
+                <p>¡Gracias por usar JP STORE!</p>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2026 JP STORE. Todos los derechos reservados.</p>
+            <div class="footer-links">
+                <a href="privacy.html">Políticas de Privacidad</a>
+                <a href="terms.html">Términos de Servicio</a>
+            </div>
+            <a href="https://wa.me/584143187185" target="_blank" class="whatsapp-link">
+                <i class="fab fa-whatsapp"></i> Contáctanos por WhatsApp
+            </a>
+        </div>
+    </footer>
+
+<script src="script.js"></script>
+<script>
+// 1. PLANTILLAS Y DATOS ESTATICOS
+    const paymentDetailsTemplates = {
+        'pago-movil': `
+            <p><strong>Paso 1:</strong> Realiza el Pago Móvil a los siguientes datos:</p>
+            <ul>
+                <li><strong>Banco:</strong> Banco Mercantil</li>
+                <li class="copy-container">
+                    <strong>Cédula:</strong> <span id="pm-cedula">30186911</span>
+                    <button type="button" class="copy-button" data-copy-target="pm-cedula"><i class="fas fa-copy"></i></button>
+                    <span id="pm-cedula-copy-feedback" class="copy-feedback"></span>
+                </li>
+                <li class="copy-container">
+                    <strong>Teléfono:</strong> <span id="pm-telefono">04143187185</span>
+                    <button type="button" class="copy-button" data-copy-target="pm-telefono"><i class="fas fa-copy"></i></button>
+                    <span id="pm-telefono-copy-feedback" class="copy-feedback"></span>
+                </li>
+            </ul>
+            <div class="payment-fields-container">
+                <p><strong>Paso 2:</strong> Sube tu comprobante de pago.</p>
+                <label for="payment-receipt">Subir Comprobante de Pago:</label>
+                <input type="file" id="payment-receipt" name="paymentReceipt" accept="image/*,application/pdf" required>
+            </div>
+        `,
+        'zelle': `
+            <div class="payment-fields-container">
+                <p><strong>⚠️ Para pagar con Zelle:</strong></p>
+                <p>Por favor, contacta a nuestro soporte por WhatsApp para obtener los datos de la cuenta Zelle y proceder con el pago.</p>
+                <a href="https://wa.me/584143187185" target="_blank" class="whatsapp-link" style="display: inline-block; margin: 10px 0;">
+                    <i class="fab fa-whatsapp"></i> Contactar por WhatsApp
+                </a>
+                <input type="hidden" id="payment-receipt" name="paymentReceipt" value="Zelle_Payment" required>
+            </div>
+        `,
+        'binance': `
+            <p><strong>Paso 1:</strong> Transfiere el monto exacto a nuestra cuenta Binance.</p>
+            <ul>
+                <li class="copy-container">
+                    <strong>Correo Binance:</strong> <span id="binance-email">jesuspgjavier@gmail.com</span>
+                    <button type="button" class="copy-button" data-copy-target="binance-email"><i class="fas fa-copy"></i></button>
+                    <span id="binance-email-copy-feedback" class="copy-feedback"></span>
+                </li>
+            </ul>
+            <div class="payment-fields-container">
+                <p><strong>Paso 2:</strong> Sube tu comprobante de pago.</p>
+                <label for="payment-receipt">Subir Comprobante de Pago:</label>
+                <input type="file" id="payment-receipt" name="paymentReceipt" accept="image/*,application/pdf" required>
+            </div>
+        `,
+        'nequi': `
+            <p><strong>Paso 1:</strong> Realiza la transferencia Nequi a los siguientes datos:</p>
+            <ul>
+                <li class="copy-container">
+                    <strong>Nombre:</strong> <span id="nequi-name">Danilo Miranda</span>
+                    <button type="button" class="copy-button" data-copy-target="nequi-name"><i class="fas fa-copy"></i></button>
+                    <span id="nequi-name-copy-feedback" class="copy-feedback"></span>
+                </li>
+                <li class="copy-container">
+                    <strong>Número Nequi:</strong> <span id="nequi-number">3104446837</span>
+                    <button type="button" class="copy-button" data-copy-target="nequi-number"><i class="fas fa-copy"></i></button>
+                    <span id="nequi-number-copy-feedback" class="copy-feedback"></span>
+                </li>
+            </ul>
+            <div class="payment-fields-container">
+                <p><strong>Paso 2:</strong> Sube tu comprobante de pago.</p>
+                <label for="payment-receipt">Subir Comprobante de Pago:</label>
+                <input type="file" id="payment-receipt" name="paymentReceipt" accept="image/*,application/pdf" required>
+            </div>
+        `,
+        'wallet': `
+            <div class="payment-fields-container">
+                <p><strong>Paso 1:</strong> Confirma la deducción de <span id="wallet-final-price" style="font-weight: bold;"></span> de tu Wallet de la página.</p>
+                <p style="font-size: 0.9em; color: #ff9800;">(Asegúrate de tener saldo suficiente antes de continuar. La deducción se hará al presionar "Finalizar Recarga")</p>
+                <input type="hidden" id="payment-receipt" name="paymentReceipt" value="Wallet_Deduction_Flow" required>
+            </div>
+        `
+    };
+
+    const paymentMethodsVES = [
+        { id: 'pago-movil', name: 'Pago Móvil', type: 'ves', icon: 'fas fa-mobile-alt' }
+    ];
+
+    const paymentMethodsUSD = [
+        { id: 'zelle', name: 'Zelle', type: 'usd', icon: 'fas fa-university' },
+        { id: 'binance', name: 'Binance', type: 'usd', icon: 'fab fa-bitcoin' }
+    ];
+
+    const paymentMethodsCOP = [
+        { id: 'nequi', name: 'Nequi', type: 'cop', icon: 'fas fa-money-bill-wave' }
+    ];
+
+    const paymentMethodsJPUSD = [
+        { id: 'wallet', name: 'Wallet (Saldo en Página)', type: 'jpusd', icon: 'fas fa-wallet' }
+    ];
+
+    // 2. VARIABLES GLOBALES DE LA PAGINA
+    let transactionDetails = null;
+    const paymentForm = document.getElementById('payment-form');
+    const whatsappMessageContainer = document.getElementById('whatsapp-message-container');
+    const finalizeBtn = document.getElementById('finalize-recharge-btn');
+    const successMessageDisplay = document.getElementById('success-message-display');
+    const paymentDetailsFormDiv = document.getElementById('payment-details-form');
+    const paymentMethodsDiv = document.getElementById('payment-methods'); 
+    
+    // ⏰ NUEVAS VARIABLES GLOBALES PARA EL TEMPORIZADOR ⏰
+    const PAYMENT_TIMEOUT_MINUTES = 15;
+    const paymentTimerContainer = document.getElementById('payment-timer-container');
+    const paymentTimerDisplay = document.getElementById('payment-timer');
+    let timerInterval;
+
+    // 🔐 NUEVAS VARIABLES DE SEGURIDAD Y REDIRECCIÓN
+    const SESSION_TOKEN_KEY = 'userSessionToken'; // Clave usada en el flujo de Wallet
+    const LOGIN_PAGE_URL = 'login.html'; // Página a la que redirigir
+
+
+    // 3. FUNCIONES DE LÓGICA
+    
+    /**
+     * 🔐 NUEVA FUNCIÓN CLAVE: Verifica si existe un token de sesión activo.
+     * Si no lo hay, redirige a login.html, guardando la URL actual para volver.
+     * @returns {boolean} True si la sesión es válida, False si redirige.
+     */
+    function checkActiveSession() {
+        // 🚨 Usamos la clave correcta para el token de sesión (ver flujo de Wallet)
+        const sessionToken = localStorage.getItem(SESSION_TOKEN_KEY); 
+
+        // Si la sesión no existe, redirigimos
+        if (!sessionToken) {
+            // Guardar la URL actual de payment.html en localStorage para volver después del login
+            localStorage.setItem('redirectAfterLogin', window.location.href);
+
+            // Redirigir al usuario a la página de login
+            alert('Debes iniciar sesión para acceder a la página de pago. Serás redirigido a la página de inicio de sesión.');
+            window.location.href = LOGIN_PAGE_URL;
+            return false;
+        }
+        return true;
+    }
+
+    /**
+     * ⏰ NUEVA FUNCIÓN CLAVE: Inicia o restaura el temporizador de pago.
+     */
+    function startPaymentTimer() {
+        const startTime = localStorage.getItem('paymentStartTime');
+        const now = new Date().getTime();
+        const duration = PAYMENT_TIMEOUT_MINUTES * 60 * 1000;
+        let endTime;
+
+        if (startTime) {
+            endTime = parseInt(startTime) + duration;
+        } else {
+            // Si no hay hora de inicio, es la primera vez que se carga la página de pago.
+            endTime = now + duration;
+            localStorage.setItem('paymentStartTime', now.toString());
+        }
+
+        // Mostrar el contenedor del temporizador
+        paymentTimerContainer.style.display = 'flex';
+        
+        // Limpiar cualquier intervalo previo
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+
+        timerInterval = setInterval(() => {
+            const current = new Date().getTime();
+            const remainingTime = endTime - current;
+            
+            if (remainingTime < 0) {
+                clearInterval(timerInterval);
+                paymentTimerDisplay.textContent = '00:00';
+                paymentTimerContainer.classList.add('expired', 'critical-state'); // También añade critical-state al expirar
+                alert(`El tiempo de ${PAYMENT_TIMEOUT_MINUTES} minutos para completar el pago ha expirado. Su carrito ha sido vaciado.`);
+                
+                // Redirigir y vaciar carrito
+                localStorage.removeItem('transactionDetails');
+                localStorage.removeItem('cartItems'); 
+                localStorage.removeItem('paymentStartTime');
+                window.location.href = 'index.html';
+                return;
+            }
+
+            displayTime(remainingTime);
+        }, 1000);
+    }
+    
+    /**
+     * ⏰ FUNCIÓN MODIFICADA: Actualiza el texto y **las clases de estado** del temporizador.
+     * Esto corrige el problema del color hardcoded.
+     * @param {number} ms - Milisegundos restantes.
+     */
+    function displayTime(ms) {
+        const totalSeconds = Math.floor(ms / 1000);
+        const minutes = Math.floor(totalSeconds / 60);
+        const seconds = totalSeconds % 60;
+        
+        const minutesStr = minutes < 10 ? '0' + minutes : minutes;
+        const secondsStr = seconds < 10 ? '0' + seconds : seconds;
+        
+        paymentTimerDisplay.textContent = `${minutesStr}:${secondsStr}`;
+        
+        // **INICIO DE LA CORRECCIÓN DEL COLOR HARDCODED**
+        
+        // 1. Limpiar clases de estado previas
+        paymentTimerContainer.classList.remove('warning-state', 'critical-state');
+
+        // 2. Aplicar clases basadas en el tiempo restante (Usando las variables CSS)
+        if (minutes < 5 && minutes >= 2) {
+            // Estado de advertencia (5 minutos o menos, pero más de 1 minuto)
+            paymentTimerContainer.classList.add('warning-state');
+        } else if (minutes < 2) {
+            // Estado crítico (menos de 2 minutos)
+            paymentTimerContainer.classList.add('critical-state');
+        } 
+        
+        // Si el tiempo es mayor a 5 minutos, no se añade ninguna clase, 
+        // y el contenedor mantiene su estilo base (que debería usar --timer-normal-bg)
+        
+        // **FIN DE LA CORRECCIÓN DEL COLOR HARDCODED**
+    }
+
+    /**
+     * @NUEVA_FUNCIÓN_CLAVE: Busca y retorna el google_id de la transacción.
+     * Esto es CRÍTICO para las recargas de saldo.
+     * @returns {string|null} El Google ID si se encuentra un ítem de 'Recarga de Saldo', de lo contrario null.
+     */
+    function getGoogleIdFromTransaction() {
+        // Aseguramos que transactionDetails sea un array
+        const cartItems = Array.isArray(transactionDetails) ? transactionDetails : (transactionDetails ? [transactionDetails] : []);
+        
+        for (const item of cartItems) {
+            // Buscamos específicamente el item de 'Recarga de Saldo' que debería contener el google_id
+            if (item.game === 'Recarga de Saldo' && item.google_id) { 
+                return item.google_id;
+            }
+        }
+        return null; 
+    }
+
+
+    /**
+     * @NUEVA_FUNCIÓN: Verifica si algún ítem en la transacción requiere flujo asistido (TikTok/Telegram).
+     * @returns {boolean}
+     */
+    function isAssistedFlow() {
+        // Si no hay detalles, no es asistido
+        if (!transactionDetails) return false;
+
+        // Si es un array (carrito), verificamos si ALGUNO de los items es asistido
+        if (Array.isArray(transactionDetails)) {
+            return transactionDetails.some(item => 
+                item.game === "TikTok" || item.game === "Telegram"
+            );
+        } 
+        
+        // Si es un objeto singular (flujo antiguo), verificamos ese objeto
+        return transactionDetails.game === "TikTok" || transactionDetails.game === "Telegram";
+    }
+
+    /**
+     * @MODIFICADO: Genera y actualiza el enlace de WhatsApp para recargas asistidas.
+     * Ahora genera un mensaje detallado para el carrito.
+     */
+    function updateWhatsAppLink() {
+        if (!isAssistedFlow()) return;
+
+        const whatsappLink = document.querySelector('.whatsapp-link');
+        const email = document.getElementById('email') ? document.getElementById('email').value.trim() : '';
+        const whatsappNumber = document.getElementById('whatsappNumber') ? document.getElementById('whatsappNumber').value.trim() : '';
+        const isEmailValid = document.getElementById('email') ? document.getElementById('email').checkValidity() : false;
+        
+        if (whatsappLink && email && isEmailValid && whatsappNumber && transactionDetails && transactionDetails.finalPrice) {
+            
+            let message = `¡Hola! Quiero confirmar mi pedido de recarga.\n\n*Pedido Asistido:*\n`;
+            
+            // Determinar si es un solo item o un carrito
+            const cartItems = Array.isArray(transactionDetails) ? transactionDetails : (transactionDetails ? [transactionDetails] : []);
+            
+            let totalAmount = transactionDetails.finalPrice || 'N/A';
+            let currency = transactionDetails.currency || 'USD';
+            
+            // Construcción del mensaje con los detalles de la transacción
+            cartItems.forEach((item, index) => {
+                // Solo listamos los ítems que requieran asistencia
+                if (item.game === "TikTok" || item.game === "Telegram") {
+                    message += `\n*Item ${index + 1}:*\n`;
+                    message += `*Juego/Servicio:* ${item.game}\n`;
+                    message += `*Paquete:* ${item.packageName}\n`;
+                    if (item.playerId) {
+                        message += `*ID/Usuario:* ${item.playerId}\n`;
+                    } else if (item.robloxEmail) {
+                        message += `*Correo:* ${item.robloxEmail}\n`;
+                    }
+                }
+            });
+            
+            message += `\n*TOTAL A PAGAR:* ${totalAmount} ${currency}`;
+            message += `\n\n*Correo de Contacto:* ${email}\n*WhatsApp de Contacto:* ${whatsappNumber}\n\nPor favor, ayúdame a finalizar mi compra.`;
+
+            const encodedMessage = encodeURIComponent(message);
+            
+            // Número de WhatsApp de JP STORE
+            const malokWhatsappNumber = '584143187185'; 
+            
+            // Ajustar el selector al que está en el HTML
+            const whatsappLinkInContainer = whatsappMessageContainer.querySelector('.whatsapp-link');
+            if (whatsappLinkInContainer) {
+                whatsappLinkInContainer.href = `https://wa.me/${malokWhatsappNumber}?text=${encodedMessage}`;
+                whatsappLinkInContainer.classList.remove('disabled');
+                whatsappLinkInContainer.style.pointerEvents = 'auto'; // Habilitar click
+                whatsappLinkInContainer.style.opacity = '1';
+            }
+        } else if (whatsappLink) {
+            // Deshabilitar el enlace si faltan campos o detalles de la transacción
+            const whatsappLinkInContainer = whatsappMessageContainer.querySelector('.whatsapp-link');
+            if (whatsappLinkInContainer) {
+                whatsappLinkInContainer.href = '#';
+                whatsappLinkInContainer.classList.add('disabled');
+                whatsappLinkInContainer.style.pointerEvents = 'none'; // Deshabilitar click
+                whatsappLinkInContainer.style.opacity = '0.5';
+            }
+        }
+    }
+
+    /**
+     * @MODIFICADO: Genera y actualiza el resumen de la transacción en la UI, ahora manejando un array de productos (el carrito).
+     * Calcula el total de todos los productos y muestra los detalles individuales.
+     * 🎯 FIX: Se añade lógica para manejar el precio JPUSD (precio base sin recargo) para el cálculo del total y la visualización.
+     */
+    function updateTransactionSummary() {
+        const summaryDiv = document.getElementById('transaction-summary');
+        
+        // Aseguramos que transactionDetails sea un array. Si es un objeto singular (flujo antiguo), lo convertimos a un array.
+        const cartItems = Array.isArray(transactionDetails) ? transactionDetails : (transactionDetails ? [transactionDetails] : []);
+        
+        if (!summaryDiv || cartItems.length === 0) {
+            summaryDiv.innerHTML = '<p class="error-message">No se encontraron detalles de la recarga. Por favor, vuelve a la tienda.</p>';
+            // ⏰ AÑADIDO: Detener el temporizador si no hay detalles de transacción válidos
+            clearInterval(timerInterval);
+            localStorage.removeItem('paymentStartTime');
+            
+            setTimeout(() => { window.location.href = 'index.html'; }, 1000);
+            return;
+        }
+
+        const selectedCurrency = localStorage.getItem('selectedCurrency') || 'USD';
+        const currencySymbol = selectedCurrency === 'VES' ? 'Bs.S' : '$';
+        let totalUSD = 0; // Total con recargo (e.g., $1.13)
+        let totalVES = 0;
+        let totalJPUSD = 0; // 🎯 FIX 1: Nuevo total para JPUSD (Precio base sin recargo, e.g., $1.00)
+        let summaryHTML = '<h3>Resumen de la Transacción</h3>';
+        
+        summaryHTML += '<div class="product-list-summary">';
+
+        // 1. Iterar sobre cada item del carrito
+        cartItems.forEach((item, index) => {
+            // Aseguramos que los precios sean números, usando 0 como fallback
+            const priceUSD = parseFloat(item.priceUSD || 0);
+            const priceVES = parseFloat(item.priceVES || 0);
+            // 🎯 FIX 2: Usamos un campo para el precio base (JPUSD). Se asume que el user lo carga como 'priceJPUSD' o 'priceBaseUSD'.
+            const priceJPUSD = parseFloat(item.priceJPUSD || item.priceBaseUSD || 0); 
+
+            // Acumular todos los totales
+            totalUSD += priceUSD;
+            totalVES += priceVES;
+            totalJPUSD += priceJPUSD; // 🎯 FIX 3: Acumular el total de JPUSD
+            
+            // El precio a mostrar depende de la moneda seleccionada
+            let displayPrice;
+            if (selectedCurrency === 'VES') {
+                displayPrice = priceVES.toFixed(2);
+            } else if (selectedCurrency === 'JPUSD') { // 🎯 FIX 4: Lógica para JPUSD (usa el precio base)
+                // Si el precio JPUSD no está definido (> 0), usa el precio USD (el error original, pero con fallback)
+                displayPrice = priceJPUSD > 0 ? priceJPUSD.toFixed(2) : priceUSD.toFixed(2);
+            } else { // Por defecto 'USD' (usa el precio con recargo)
+                displayPrice = priceUSD.toFixed(2);
+            }
+            
+            let playerInfoHtml = '';
+            let passwordHtml = '';
+            let passwordToReveal = '';
+
+            // *** Lógica para el detalle del producto (adaptado de tu antigua lógica, pero por item) ***
+            const game = item.game;
+            let gameOrServiceLabel = (game === 'Netflix') ? 'Servicio' : 'Juego';
+            
+            if (game === 'Roblox' || game === 'Netflix') {
+                const gameEmailHtml = item.robloxEmail ? `<p><strong>Correo de ${game}:</strong> ${item.robloxEmail}</p>` : '';
+                if (item.robloxPassword) {
+                    passwordToReveal = item.robloxPassword;
+                }
+                playerInfoHtml = `${gameEmailHtml}`;
+            } else if (game === 'Call of Duty Mobile') {
+                const gameEmailHtml = item.codmEmail ? `<p><strong>Correo de ${game}:</strong> ${item.codmEmail}</p>` : '';
+                if (item.codmPassword) {
+                    passwordToReveal = item.codmPassword;
+                }
+                const gameVinculationHtml = item.codmVinculation ? `<p><strong>Vinculación:</strong> ${item.codmVinculation}</p>` : '';
+                playerInfoHtml = `${gameEmailHtml}${gameVinculationHtml}`;
+            } else if (game === 'Recarga de Saldo' && item.google_id) { 
+                // 🎯 INICIO DEL CAMBIO: Lógica para Recarga de Saldo/Wallet
+                gameOrServiceLabel = 'Servicio';
+                playerInfoHtml = `<p><strong>ID de Usuario (Google ID):</strong> ${item.google_id}</p>`;
+                // 🎯 FIN DEL CAMBIO
+            } else {
+                // Para otros juegos, mostramos el ID de Jugador (playerId)
+                const playerIdHtml = item.playerId ? `<p><strong>ID/Usuario:</strong> ${item.playerId}</p>` : '';
+                playerInfoHtml = playerIdHtml;
+            }
+
+            // Generar HTML de la contraseña si existe
+            if (passwordToReveal) {
+                const maskedPassword = '•'.repeat(passwordToReveal.length);
+                passwordHtml = `
+                    <p><strong>Contraseña:</strong> 
+                        <span id="game-password-${index}">${maskedPassword}</span>
+                        <button type="button" class="toggle-password" data-target-id="game-password-${index}" data-password="${passwordToReveal}">
+                            <i class="fas fa-eye"></i>
+                        </button>
+                    </p>
+                `;
+            }
+
+            // Creamos el HTML para el item actual
+            summaryHTML += `
+                <div class="product-summary-item" data-index="${index}">
+                    <p class="item-name"><strong>${gameOrServiceLabel} (${game}):</strong> ${item.packageName}</p>
+                    ${playerInfoHtml}
+                    ${passwordHtml}
+                    <p class="item-price">Precio: <span class="price-value">${currencySymbol} ${displayPrice}</span></p>
+                </div>
+                <hr>
+            `;
+        });
+        
+        // 2. Mostrar el Total Final
+        // 🎯 FIX 5: Determinar el total final basado en la moneda seleccionada, incluyendo JPUSD
+        const finalDisplayTotal = 
+            selectedCurrency === 'VES' ? totalVES.toFixed(2) : 
+            (selectedCurrency === 'JPUSD' ? totalJPUSD.toFixed(2) : totalUSD.toFixed(2));
+        
+        // Añadimos el contenedor final del total
+        summaryHTML += `
+            </div>
+            <div class="transaction-total">
+                <p><strong>TOTAL A PAGAR:</strong> <span id="final-total" data-usd="${totalUSD.toFixed(2)}" data-ves="${totalVES.toFixed(2)}" data-jpusd="${totalJPUSD.toFixed(2)}">${currencySymbol} ${finalDisplayTotal}</span></p>
+            </div>
+        `;
+
+        summaryDiv.innerHTML = summaryHTML;
+        
+        // 3. Almacenar los totales en la variable global
+        if (Array.isArray(transactionDetails)) {
+            transactionDetails.totalUSD = totalUSD.toFixed(2);
+            transactionDetails.totalVES = totalVES.toFixed(2);
+            transactionDetails.totalJPUSD = totalJPUSD.toFixed(2); // 🎯 FIX 6: Almacenar totalJPUSD
+            transactionDetails.finalPrice = finalDisplayTotal;
+            transactionDetails.currency = selectedCurrency;
+        } else if (transactionDetails) {
+            // Para el caso de un objeto singular (flujo antiguo), actualizamos el objeto
+            transactionDetails.priceUSD = totalUSD.toFixed(2);
+            transactionDetails.priceVES = totalVES.toFixed(2);
+            transactionDetails.priceJPUSD = totalJPUSD.toFixed(2); // 🎯 FIX 7: Almacenar totalJPUSD en objeto singular
+            transactionDetails.finalPrice = finalDisplayTotal;
+            transactionDetails.currency = selectedCurrency;
+        }
+
+
+        // 4. Añadir el evento a los botones de mostrar/ocultar contraseña (Ahora son múltiples)
+        document.querySelectorAll('.toggle-password').forEach(button => {
+            button.addEventListener('click', () => {
+                const targetId = button.dataset.targetId;
+                const passwordToReveal = button.dataset.password;
+                const passwordSpan = document.getElementById(targetId);
+                const maskedPassword = '•'.repeat(passwordToReveal.length);
+
+                if (passwordSpan.textContent === maskedPassword) {
+                    passwordSpan.textContent = passwordToReveal;
+                    button.innerHTML = '<i class="fas fa-eye-slash"></i>';
+                } else {
+                    passwordSpan.textContent = maskedPassword;
+                    button.innerHTML = '<i class="fas fa-eye"></i>';
+                }
+            });
+        });
+    }
+
+    function updatePaymentMethods() {
+        if (!paymentMethodsDiv) return;
+        paymentMethodsDiv.innerHTML = '';
+        // Usamos transactionDetails.currency que fue establecido por updateTransactionSummary
+        const currentCurrency = transactionDetails.currency; 
+        let methods; // 🎯 CAMBIO CLAVE: Usamos 'let' y asignación condicional
+
+        if (currentCurrency === 'VES') {
+            methods = paymentMethodsVES;
+        } else if (currentCurrency === 'JPUSD') { // 🎯 Lógica para JPUSD: solo Wallet
+            methods = paymentMethodsJPUSD; 
+        } else if (currentCurrency === 'COP') { // 🎯 NUEVO: Lógica para COP
+            methods = paymentMethodsCOP;
+        } else {
+            methods = paymentMethodsUSD; // Por defecto USD
+        }
+
+        methods.forEach(method => {
+            const methodItem = document.createElement('div');
+            methodItem.classList.add('payment-method-option');
+            methodItem.innerHTML = `
+                <input type="radio" id="method-${method.id}" name="paymentMethod" value="${method.id}" data-type="${method.type}">
+                <label for="method-${method.id}">
+                    <i class="${method.icon}"></i>
+                    <span>${method.name}</span>
+                </label>
+            `;
+            paymentMethodsDiv.appendChild(methodItem);
+        });
+
+        paymentMethodsDiv.querySelectorAll('input[name="paymentMethod"]').forEach(radio => {
+            radio.addEventListener('change', (event) => {
+                const selectedMethodId = event.target.value;
+                loadPaymentDetails(selectedMethodId);
+                checkFormValidity();
+            });
+        });
+        checkFormValidity();
+    }
+
+    function loadPaymentDetails(methodId) {
+        let methodHtml = paymentDetailsTemplates[methodId];
+
+        if (methodHtml) {
+            paymentDetailsFormDiv.innerHTML = methodHtml;
+            
+            // 🎯 FIX 8: Lógica especial para el método Wallet, usando totalJPUSD.
+            if (methodId === 'wallet') { 
+                const finalPriceElement = document.getElementById('wallet-final-price');
+                // Ahora usa el totalJPUSD calculado en updateTransactionSummary
+                const finalPriceJPUSD = transactionDetails.totalJPUSD || transactionDetails.priceJPUSD; 
+                if (finalPriceElement) {
+                    finalPriceElement.textContent = `$ ${finalPriceJPUSD}`;
+                }
+            }
+
+            const fileInput = document.getElementById('payment-receipt');
+            
+            // 🛑 MODIFICACIÓN: Solo agregar listener 'change' si es un input de tipo 'file'
+            // También ajustar la propiedad 'required' según el método
+            if (fileInput) {
+                // Métodos que requieren subir archivo (por defecto)
+                if (methodId === 'pago-movil' || methodId === 'binance' || methodId === 'nequi') {
+                    fileInput.required = true;
+                } 
+                // Métodos que NO requieren subir archivo o usan hidden input (zelle, wallet)
+                else { 
+                    fileInput.required = false; 
+                }
+
+                // Si es un input de tipo 'file', agregamos el listener
+                if (fileInput.type === 'file') {
+                    fileInput.addEventListener('change', checkFormValidity);
+                }
+            }
+            
+            
+            // 🛠️ CORRECCIÓN: Usar querySelectorAll para adjuntar evento a *todos* los botones de copiar
+            const copyButtons = paymentDetailsFormDiv.querySelectorAll('.copy-button'); 
+            copyButtons.forEach(button => { 
+                button.addEventListener('click', handleCopyButtonClick);
+            });
+        } else {
+            paymentDetailsFormDiv.innerHTML = '<p>Selecciona un método de pago para ver los detalles.</p>';
+        }
+        checkFormValidity();
+    }
+
+    async function handleCopyButtonClick(event) {
+        const button = event.currentTarget;
+        const targetId = button.dataset.copyTarget;
+        const textToCopyElement = document.getElementById(targetId);
+        const feedbackElement = document.getElementById(`${targetId}-copy-feedback`);
+
+        if (textToCopyElement && navigator.clipboard) {
+            try {
+                // Usamos textContent en lugar de innerText, ya que el CSS puede ocultar el elemento
+                await navigator.clipboard.writeText(textToCopyElement.textContent.trim()); // Usar trim para limpiar espacios
+                if (feedbackElement) {
+                    feedbackElement.textContent = '¡Copiado!';
+                    feedbackElement.style.display = 'inline-block';
+                    setTimeout(() => {
+                        feedbackElement.style.display = 'none';
+                    }, 1500);
+                }
+            } catch (err) {
+                console.error('Error al copiar: ', err);
+                if (feedbackElement) {
+                    feedbackElement.textContent = 'Error al copiar';
+                    feedbackElement.style.display = 'inline-block';
+                    setTimeout(() => {
+                        feedbackElement.style.display = 'none';
+                    }, 1500);
+                }
+                alert('No se pudo copiar el texto. Por favor, cópialo manualmente.');
+            }
+        } else {
+            alert('Tu navegador no soporta la copia automática o no se encontró el elemento. Por favor, selecciona y copia la dirección manualmente.');
+        }
+    }
+
+    /**
+     * @MODIFICADO: Verifica la validez del formulario y habilita/deshabilita los botones.
+     * Ahora incluye la excepción para 'zelle', 'binance', 'nequi' y 'wallet'.
+     */
+    function checkFormValidity() {
+        const selectedRadio = document.querySelector('input[name="paymentMethod"]:checked');
+        const isMethodSelected = selectedRadio !== null;
+        const selectedMethodId = selectedRadio ? selectedRadio.value : null; // Obtener el ID seleccionado
+        
+        const emailInput = document.getElementById('email');
+        const whatsappInput = document.getElementById('whatsappNumber');
+
+        const isEmailFilled = emailInput && emailInput.value.trim() !== '';
+        const isEmailValid = emailInput && emailInput.checkValidity();
+
+        const isWhatsappFilled = whatsappInput && whatsappInput.value.trim() !== '';
+
+        let areDetailsFilled = true;
+
+        if (isAssistedFlow()) { // Flujo asistido
+            areDetailsFilled = true; 
+        } else if (selectedMethodId === 'zelle') { // Zelle (Contactar WhatsApp)
+            areDetailsFilled = true;
+        } else if (selectedMethodId === 'wallet') { // 🎯 CAMBIO CLAVE: Wallet RESTAURADA
+            areDetailsFilled = true;
+        } else if (selectedMethodId === 'binance') { // Binance (Comprobante requerido)
+            const fileInput = document.getElementById('payment-receipt');
+            if (fileInput && fileInput.files.length === 0) {
+                areDetailsFilled = false;
+            }
+        } else if (selectedMethodId === 'nequi') { // 🎯 NUEVO: Nequi (Comprobante requerido)
+            const fileInput = document.getElementById('payment-receipt');
+            if (fileInput && fileInput.files.length === 0) {
+                areDetailsFilled = false;
+            }
+        } else if (isMethodSelected) { 
+            // Otros métodos (Pago Movil): Requieren archivo
+            const fileInput = document.getElementById('payment-receipt');
+            if (fileInput && fileInput.files.length === 0) {
+                areDetailsFilled = false;
+            }
+        } else {
+            areDetailsFilled = false; // Debe seleccionar un método
+        }
+        
+        // Lógica para el botón de FINALIZAR RECARGA (flujo normal)
+        if (!isAssistedFlow()) { 
+            // Se habilita si: hay método, detalles OK, email lleno/válido, y whatsapp lleno
+            finalizeBtn.disabled = !(isMethodSelected && areDetailsFilled && isEmailFilled && isEmailValid && isWhatsappFilled);
+        } else {
+            // Lógica para el botón de WHATSAPP (flujo asistido)
+            updateWhatsAppLink();
+        }
+    }
+    
+    /**
+     * ⏰ NUEVA FUNCIÓN CLAVE: Limpia el temporizador tras un pago exitoso (llamada antes de redirección).
+     */
+    function cleanUpPaymentSession() {
+        if (timerInterval) {
+            clearInterval(timerInterval);
+        }
+        localStorage.removeItem('transactionDetails');
+        localStorage.removeItem('cartItems'); 
+        localStorage.removeItem('paymentStartTime'); // ⏰ NUEVO: Limpiar hora de inicio del temporizador
+        paymentTimerContainer.style.display = 'none'; // Ocultar el temporizador
+    }
+    
+
+    // 4. EVENT LISTENERS
+    document.addEventListener('DOMContentLoaded', () => {
+        
+        // 🛑 LÍNEA CLAVE AÑADIDA: Verificar sesión antes de todo.
+        if (!checkActiveSession()) {
+            return; // Detiene la ejecución si el usuario fue redirigido a login.html
+        }
+        
+        const transactionSummaryDiv = document.getElementById('transaction-summary');
+
+        // 🟢 NUEVA LÓGICA: DETECCIÓN DE REDIRECCIÓN DE PLISIO (FLUSO AUTOMÁTICO)
+        const urlParams = new URLSearchParams(window.location.search);
+        const status = urlParams.get('status');
+        
+        // 🛑 ELEMENTOS A OCULTAR
+        const h2Title = document.querySelector('.form-container h2');
+        const transactionSummary = document.getElementById('transaction-summary');
+
+        if (status === 'success' || status === 'processing') { // Añadido 'processing' como estado de redirección
+            console.log('Detectada redirección de Plisio exitosa. Activando mensaje de procesamiento.');
+            
+            // 🛑 LÍNEAS AÑADIDAS PARA OCULTAR ELEMENTOS
+            if (h2Title) h2Title.style.display = 'none';
+            if (transactionSummary) transactionSummary.style.display = 'none';
+            // 🛑 FIN NUEVAS LÍNEAS
+
+            // 1. Ocultar el formulario de comprobante de pago
+            if (paymentForm) paymentForm.style.display = 'none';
+            
+            // 2. Ocultar la sección de mensaje de WhatsApp (si existe)
+            if (whatsappMessageContainer) whatsappMessageContainer.style.display = 'none';
+            
+            // 3. Mostrar el mensaje de éxito (el cuadro de "Su recarga está siendo procesada...")
+            if (successMessageDisplay) successMessageDisplay.style.display = 'block';
+
+            // 4. Limpiar la sesión de pago
+            cleanUpPaymentSession(); // ⏰ USAR LA NUEVA FUNCIÓN
+
+            // 5. Iniciar la redirección automática a index.html después de 5 segundos
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 5000);
+            
+            // 🛑 Detener la ejecución del resto del script
+            return; 
+        }
+        // 🛑 FIN DE NUEVA LÓGICA DE PLISIO
+
+        
+        const storedDetails = localStorage.getItem('transactionDetails');
+        if (storedDetails) {
+            transactionDetails = JSON.parse(storedDetails);
+            
+            // ⏰ INICIO DEL TEMPORIZADOR: Solo si hay detalles de transacción válidos
+            startPaymentTimer();
+            // ----------------------------------------------------
+            
+            // APLICAR ARREGLO CLAVE: Si es un objeto singular (flujo antiguo), lo convertimos a array.
+            if (!Array.isArray(transactionDetails)) {
+                transactionDetails = [transactionDetails];
+            }
+
+            // Mover los listeners de los campos de contacto aquí para que estén activos siempre
+            const emailInput = document.getElementById('email');
+            const whatsappInput = document.getElementById('whatsappNumber');
+            if (emailInput) emailInput.addEventListener('input', checkFormValidity);
+            if (whatsappInput) whatsappInput.addEventListener('input', checkFormValidity);
+
+            updateTransactionSummary(); // Esto calcula los totales y los adjunta a transactionDetails
+            
+            // Lógica de visualización inicial para recargas asistidas (TikTok/Telegram)
+            if (isAssistedFlow()) { // USAR isAssistedFlow()
+                whatsappMessageContainer.style.display = 'block';
+                finalizeBtn.style.display = 'none';
+                // Oculta el paso 1 y 2
+                if (paymentMethodsDiv) paymentMethodsDiv.closest('.form-section-step').style.display = 'none'; 
+                if (paymentDetailsFormDiv) paymentDetailsFormDiv.closest('.form-section-step').style.display = 'none'; 
+                updateWhatsAppLink(); // Inicia la validación del link de WhatsApp
+            } else {
+                whatsappMessageContainer.style.display = 'none';
+                finalizeBtn.style.display = 'block';
+                // Muestra el paso 1 y 2
+                if (paymentMethodsDiv) paymentMethodsDiv.closest('.form-section-step').style.display = 'block'; 
+                if (paymentDetailsFormDiv) paymentDetailsFormDiv.closest('.form-section-step').style.display = 'block'; 
+                updatePaymentMethods(); // Renderiza los métodos de pago (Solo si no es asistido)
+            }
+        } else {
+            transactionSummaryDiv.innerHTML = '<p>No se encontraron detalles de la transacción. Por favor, regresa a la página de inicio.</p>';
+            finalizeBtn.style.display = 'none';
+            whatsappMessageContainer.style.display = 'none';
+            if (paymentDetailsFormDiv) paymentDetailsFormDiv.style.display = 'none';
+            if (paymentMethodsDiv) paymentMethodsDiv.closest('.form-section-step').style.display = 'none';
+            
+            // ⏰ AÑADIDO: Detener el temporizador si no hay detalles de transacción válidos
+            clearInterval(timerInterval);
+            localStorage.removeItem('paymentStartTime');
+            paymentTimerContainer.style.display = 'none';
+        }
+    });
+
+    document.getElementById('payment-form').addEventListener('submit', async (e) => {
+        e.preventDefault();
+
+        const formData = new FormData(paymentForm);
+
+        const selectedPaymentMethod = document.querySelector('input[name="paymentMethod"]:checked')?.value;
+        const emailInput = document.getElementById('email');
+        const whatsappInput = document.getElementById('whatsappNumber');
+        
+        // Validaciones de campos de contacto (universales)
+        if (!emailInput || emailInput.value.trim() === '' || !emailInput.checkValidity()) {
+            alert('Por favor, ingresa un correo electrónico válido para recibir notificaciones.');
+            emailInput.focus();
+            return;
+        }
+        
+        if (!whatsappInput || whatsappInput.value.trim() === '') {
+            alert('Por favor, ingresa tu número de WhatsApp para poder contactarte y completar la recarga.');
+            return;
+        }
+        
+        // Lógica especial para recargas asistidas (no se envían al backend)
+        if (isAssistedFlow()) { 
+            
+            // 🛑 LÍNEAS AÑADIDAS PARA OCULTAR ELEMENTOS
+            const h2Title = document.querySelector('.form-container h2');
+            const transactionSummary = document.getElementById('transaction-summary');
+            if (h2Title) h2Title.style.display = 'none';
+            if (transactionSummary) transactionSummary.style.display = 'none';
+            // 🛑 FIN NUEVAS LÍNEAS
+
+            // Simplemente oculta el formulario y muestra el mensaje de éxito temporal.
+            paymentForm.style.display = 'none';
+            whatsappMessageContainer.style.display = 'none';
+            successMessageDisplay.style.display = 'block';
+            
+            cleanUpPaymentSession(); // ⏰ USAR LA NUEVA FUNCIÓN
+            
+            setTimeout(() => {
+                window.location.href = 'index.html';
+            }, 5000);
+            return;
+        }
+        
+        // 🎯 FIX 9: Obtener el precio final correcto (JPUSD si es Wallet, USD si es otro método USD)
+        const finalPriceUSD = selectedPaymentMethod === 'wallet' 
+            ? (transactionDetails.totalJPUSD || transactionDetails.priceJPUSD) 
+            : (transactionDetails.totalUSD || transactionDetails.priceUSD);
+
+        // 🎯 INICIO DEL CAMBIO CLAVE: Lógica para el flujo de pago con Wallet
+        if (selectedPaymentMethod === 'wallet') {
+            
+            // 🚨🚨🚨 CORRECCIÓN CLAVE 🚨🚨🚨: Usar la clave correcta 'userSessionToken'
+            const sessionToken = localStorage.getItem('userSessionToken'); 
+            
+            // 🛑 DIAGNÓSTICO CLAVE 1: Verificar la existencia del token justo antes de usarlo
+            if (!sessionToken) {
+                // El log de error también se corrige para la clave correcta
+                console.error('DIAGNÓSTICO: userSessionToken NO encontrado en localStorage. Deteniendo el pago.');
+                alert('Error: No se encontró la sesión activa (token Bearer). Por favor, inicia sesión de nuevo.');
+                finalizeBtn.disabled = false;
+                finalizeBtn.textContent = 'Finalizar Recarga';
+                return; 
+            }
+            console.log('DIAGNÓSTICO: Token de Sesión Encontrado. Longitud:', sessionToken.length);
+
+            if (!finalPriceUSD || parseFloat(finalPriceUSD) <= 0) {
+                alert('Error: El monto de la transacción es inválido. Por favor, revisa tu carrito.');
+                return;
+            }
+
+            finalizeBtn.disabled = true;
+            finalizeBtn.textContent = 'Deduciendo Saldo...';
+            
+            // 🛑 DIAGNÓSTICO CLAVE 2: Antes de la llamada de red
+            console.log(`DIAGNÓSTICO: Iniciando fetch a Netlify Function '/.netlify/functions/deduct-wallet-balance' con Token Bearer. Monto: ${finalPriceUSD}`);
+            
+            try {
+                // 1. PAGO: Llamada a deduct-wallet-balance
+                const walletResponse = await fetch('/.netlify/functions/deduct-wallet-balance', { 
+                    method: 'POST',
+                    headers: { 
+                        'Content-Type': 'application/json',
+                        'Authorization': `Bearer ${sessionToken}` 
+                    },
+                    body: JSON.stringify({
+                        email: emailInput.value.trim(),
+                        whatsapp: whatsappInput.value.trim(),
+                        amountUSD: finalPriceUSD, 
+                        cartDetails: JSON.stringify(Array.isArray(transactionDetails) ? transactionDetails : [transactionDetails]), 
+                    })
+                });
+
+                // 🛑 DIAGNÓSTICO CLAVE 3: Después de la respuesta de red
+                console.log('DIAGNÓSTICO: Respuesta de Netlify Function recibida. Estado:', walletResponse.status);
+
+                if (walletResponse.ok) {
+                    // 2. ÉXITO EN EL PAGO: Ahora llamar a process-payment (Notificación a Telegram)
+                    finalizeBtn.textContent = 'Enviando Notificación...';
+                    console.log('DIAGNÓSTICO: Deducción exitosa. Procediendo a notificar el pago.');
+                    
+                    // 🔑 LÍNEA CLAVE AÑADIDA: Refrescar el saldo después de una deducción exitosa
+                    window.refreshWalletBalance(); 
+
+                    // a. Preparar FormData para la función process-payment (simulando formulario)
+                    const processFormData = new FormData();
+                    processFormData.append('paymentMethod', 'wallet');
+                    processFormData.append('email', emailInput.value.trim());
+                    processFormData.append('whatsappNumber', whatsappInput.value.trim());
+                    // Enviamos la cadena de valor del input hidden
+                    processFormData.append('paymentReceipt', 'Wallet_Deduction_Flow'); 
+                    
+                    // Añadir todos los datos de transacción
+                    processFormData.append('cartDetails', JSON.stringify(Array.isArray(transactionDetails) ? transactionDetails : [transactionDetails]));
+                    processFormData.append('finalPrice', transactionDetails.finalPrice);
+                    processFormData.append('currency', transactionDetails.currency);
+                    processFormData.append('totalUSD', transactionDetails.totalUSD);
+                    processFormData.append('totalVES', transactionDetails.totalVES);
+                    processFormData.append('totalJPUSD', transactionDetails.totalJPUSD);
+
+                    // b. Llamar a process-payment
+                    const processPaymentResponse = await fetch('/.netlify/functions/process-payment', {
+                        method: 'POST',
+                        body: processFormData
+                    });
+
+                    if (processPaymentResponse.ok) {
+                        // 3. ÉXITO COMPLETO (Pago y Notificación OK)
+                        const h2Title = document.querySelector('.form-container h2');
+                        const transactionSummary = document.getElementById('transaction-summary');
+                        if (h2Title) h2Title.style.display = 'none';
+                        if (transactionSummary) transactionSummary.style.display = 'none';
+
+                        paymentForm.style.display = 'none';
+                        whatsappMessageContainer.style.display = 'none';
+                        successMessageDisplay.style.display = 'block';
+                        
+                        cleanUpPaymentSession(); // ⏰ USAR LA NUEVA FUNCIÓN
+                        
+                        console.log('DIAGNÓSTICO: Notificación exitosa. Redirigiendo.');
+
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 5000);
+                        
+                    } else {
+                        // 3. ÉXITO PARCIAL (Pago OK, Notificación fallida)
+                        const errorData = await processPaymentResponse.json();
+                        alert(`¡Pago con Wallet exitoso, pero falló la notificación automática! Por favor, contacta a soporte con tu email (${emailInput.value.trim()}) para confirmar tu pedido y envíanos la captura de tu pedido en Telegram.\nError: ${errorData.message || 'Error desconocido'}`);
+                        console.error('DIAGNÓSTICO: Process Payment (Telegram) error after successful Wallet deduction:', errorData);
+
+                        // Se considera éxito para el usuario, se limpia storage y se redirige
+                        cleanUpPaymentSession(); // ⏰ USAR LA NUEVA FUNCIÓN
+                        
+                        finalizeBtn.disabled = true;
+                        finalizeBtn.textContent = 'Pago Exitoso. Redirigiendo...';
+                        
+                        setTimeout(() => {
+                            window.location.href = 'index.html';
+                        }, 5000);
+                    }
+
+                } else {
+                    // 2. PAGO FALLIDO (Deducción fallida/Saldo insuficiente)
+                    const errorData = await walletResponse.json();
+                    
+                    const errorMessage = errorData.message || 'Error desconocido';
+                    
+                    if (errorMessage.toLowerCase().includes('saldo insuficiente') || errorMessage.toLowerCase().includes('monto supera los limites de fondos')) {
+                         alert('El monto de la recarga supera el saldo disponible en tu Wallet. Por favor, recarga tu billetera o selecciona otro método de pago.');
+                    } else {
+                         alert(`Error en el pago con Wallet: ${errorMessage}.`);
+                    }
+                    
+                    console.error('DIAGNÓSTICO: Wallet deduction error (Status:', walletResponse.status, '):', errorData);
+                    finalizeBtn.disabled = false;
+                    finalizeBtn.textContent = 'Finalizar Recarga';
+                }
+            } catch (error) {
+                // 🛑 DIAGNÓSTICO CLAVE 4: Error de red o promesa fallida
+                alert('Hubo un problema de conexión al intentar pagar con Wallet. Revisa la consola para el error de red.');
+                console.error('DIAGNÓSTICO: Wallet network error:', error);
+                finalizeBtn.disabled = false;
+                finalizeBtn.textContent = 'Finalizar Recarga';
+            }
+            return;
+        }
+        // 🎯 FIN DEL CAMBIO CLAVE: Lógica para el flujo de pago con Wallet
+
+        // Lógica para flujo de pago normal (requiere comprobante o ID - Pago Móvil/Binance/Nequi/Zelle)
+        
+        let requiresReceipt = (selectedPaymentMethod === 'pago-movil' || selectedPaymentMethod === 'binance' || selectedPaymentMethod === 'nequi');
+
+        if (requiresReceipt) {
+            const paymentReceipt = document.getElementById('payment-receipt');
+            if (!paymentReceipt || paymentReceipt.files.length === 0) {
+                alert('Por favor, sube tu comprobante de pago.');
+                return;
+            }
+        }
+        
+        // Agregamos todos los datos de transacción
+        formData.append('cartDetails', JSON.stringify(Array.isArray(transactionDetails) ? transactionDetails : [transactionDetails]));
+        
+        if (transactionDetails.finalPrice) {
+            formData.append('finalPrice', transactionDetails.finalPrice);
+            formData.append('currency', transactionDetails.currency);
+            formData.append('totalUSD', transactionDetails.totalUSD);
+            formData.append('totalVES', transactionDetails.totalVES);
+            formData.append('totalJPUSD', transactionDetails.totalJPUSD); // 🎯 FIX 12: Agregar totalJPUSD al formData
+        }
+
+        console.log('Datos a enviar (FormData):');
+        for (let pair of formData.entries()) {
+            if (pair[0] === 'paymentReceipt') {
+                console.log(pair[0]+ ': [Archivo subido]');
+            } else if (pair[0] === 'cartDetails') {
+                console.log(pair[0]+ ': ' + pair[1]);
+            } else {
+                console.log(pair[0]+ ': ' + pair[1]);
+            }
+        }
+        
+        // Enviar al backend
+        finalizeBtn.disabled = true;
+        finalizeBtn.textContent = 'Enviando...';
+        
+        try {
+            const response = await fetch('/.netlify/functions/process-payment', {
+                method: 'POST',
+                body: formData
+            });
+
+            if (response.ok) {
+                // 🛑 LÍNEAS AÑADIDAS PARA OCULTAR ELEMENTOS
+                const h2Title = document.querySelector('.form-container h2');
+                const transactionSummary = document.getElementById('transaction-summary');
+                if (h2Title) h2Title.style.display = 'none';
+                if (transactionSummary) transactionSummary.style.display = 'none';
+                // 🛑 FIN NUEVAS LÍNEAS
+
+                paymentForm.style.display = 'none';
+                whatsappMessageContainer.style.display = 'none';
+                successMessageDisplay.style.display = 'block';
+                
+                cleanUpPaymentSession(); // ⏰ USAR LA NUEVA FUNCIÓN
+
+                setTimeout(() => {
+                    window.location.href = 'index.html';
+                }, 5000);
+            } else {
+                const errorData = await response.json();
+                alert(`Ocurrió un error: ${errorData.message || response.statusText}. Por favor, verifica tus datos e inténtalo de nuevo.`);
+                console.error('Server error:', errorData);
+                finalizeBtn.disabled = false;
+                finalizeBtn.textContent = 'Finalizar Recarga';
+            }
+        } catch (error) {
+            alert('Hubo un problema de conexión. Por favor, inténtalo de nuevo más tarde.');
+            console.error('Network or client error:', error);
+            finalizeBtn.disabled = false;
+            finalizeBtn.textContent = 'Finalizar Recarga';
+        }
+    });
+
+// ... (código previo del script de payment.html)
+
+    // 🚩 INICIO DE LA MODIFICACIÓN SOLICITADA 🚩
+
+    /**
+     * Lógica para reiniciar el contador y vaciar el carrito 
+     * si el usuario navega fuera de payment.html (al usar la flecha
+     * atrás o al hacer clic en un enlace como index.html o products.html).
+     */
+    window.addEventListener('unload', function (e) {
+        // Verificar si el mensaje de éxito ya se mostró. Si es así, no limpiamos.
+        const paymentCompleted = successMessageDisplay.style.display === 'block';
+
+        // 🚨 CAMBIO CLAVE: Comprobar si existe una redirección pendiente hacia el login.
+        // Si 'redirectAfterLogin' existe, significa que la navegación a login.html fue intencional
+        // y NO debemos borrar 'transactionDetails' ni 'cartItems'.
+        const isRedirectingToLogin = localStorage.getItem('redirectAfterLogin') !== null;
+
+        // Solo borra el carrito y la transacción si NO se ha completado el pago Y NO estamos redirigiendo intencionalmente a login.
+        if (!paymentCompleted && !isRedirectingToLogin) {
+            // Vacía las claves que guardan el estado de la transacción y el temporizador.
+            localStorage.removeItem('transactionDetails'); // Vacía los detalles de la transacción
+            localStorage.removeItem('cartItems'); // Vacía el carrito
+            localStorage.removeItem('paymentStartTime'); // Reinicia el contador/temporizador
+            
+            // Detener el intervalo del temporizador si está activo
+            if (timerInterval) {
+                clearInterval(timerInterval);
+            }
+            console.log("Sesión de pago incompleta limpiada debido a navegación fuera de la página.");
+        } else if (paymentCompleted) {
+             // Lógica de limpieza solo de temporizador si el pago ya se completó (ej. Plisio/Wallet)
+             if (timerInterval) {
+                clearInterval(timerInterval);
+                localStorage.removeItem('paymentStartTime');
+             }
+             // Las otras claves (cartItems, transactionDetails) ya se limpiaron en el flujo de éxito
+        }
+    });
+
+    // 🚩 FIN DE LA MODIFICACIÓN SOLICITADA 🚩
+
+</script>
+</body>
+</html>

@@ -1,0 +1,382 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title id="page-title">Cargando Recarga - JP STORE</title> 
+    <link rel="stylesheet" href="style.css"> 
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+    
+    <style>
+        /* SOLUCIÓN V.2: Asegurar que el body no desborde y que el layout sea flexible */
+        body {
+            overflow-x: hidden; 
+        }
+
+        /* ==================================== */
+        /* === ESTILOS PARA LA SELECCIÓN DE PAQUETES EN product.html === */
+        /* ==================================== */
+
+        /* 1. Contenedor de Opciones (Grid) */
+        .package-options {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(140px, 1fr)); 
+            gap: 15px;
+            padding: 10px 0;
+            margin-top: 15px;
+        }
+
+        /* 2. Estilo Base del Recuadro de Paquete */
+        .package-option {
+            background-color: var(--card-bg);
+            border: 2px solid var(--border-color);
+            border-radius: 8px;
+            padding: 15px;
+            text-align: center;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            display: flex; 
+            flex-direction: column; 
+            justify-content: center;
+            min-height: 80px; 
+            box-sizing: border-box; 
+        }
+
+        /* Efecto visual al pasar el ratón */
+        .package-option:hover {
+            border-color: var(--hover-blue);
+            transform: translateY(-2px);
+            box-shadow: 0 4px 10px var(--shadow-dark);
+        }
+
+        /* 3. Estilo para el Paquete SELECCIONADO */
+        .package-option.selected {
+            border-color: var(--primary-blue);
+            background: var(--selected-item-gradient);
+            box-shadow: 0 0 15px var(--shadow-light);
+            transform: scale(1.02);
+            color: white !important;
+        }
+
+        /* 4. Estilos Internos del Paquete */
+        .package-name {
+            font-size: 1em;
+            font-weight: 500;
+            color: inherit;
+            margin-bottom: 5px;
+        }
+
+        .package-price {
+            font-size: 1.4em;
+            font-weight: 700;
+            color: white;
+        }
+
+        /* 5. Ajustes Responsivos para móviles pequeños */
+        @media (max-width: 600px) {
+            .package-options {
+                grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
+                gap: 10px;
+            }
+            
+            .package-option {
+                padding: 10px;
+                min-height: 70px;
+            }
+
+            .package-name {
+                font-size: 0.9em;
+            }
+
+            .package-price {
+                font-size: 1.2em;
+            }
+        }
+
+        /* Contenedor principal de la página de producto */
+        .product-main {
+            display: flex;
+            gap: 30px;
+            max-width: 1200px;
+            margin: 40px auto;
+            padding: 0 20px;
+            align-items: flex-start;
+        }
+
+        /* Columna de Información del Producto (Izquierda) */
+        .product-info {
+            flex: 1 1 55%;
+            min-width: 300px; /* Se mantiene para desktop/tablet */
+        }
+
+        /* Imagen/Banner del Producto */
+        .product-banner-image {
+            width: 100%;
+            height: auto;
+            border-radius: 12px;
+            margin-bottom: 20px;
+            box-shadow: 0 8px 15px var(--shadow-dark);
+        }
+
+        .product-title {
+            color: var(--text-color);
+            font-size: 2.2em;
+            margin-bottom: 10px;
+        }
+
+        /* Columna del Formulario de Recarga (Derecha) */
+        .product-form-container {
+            flex: 1 1 40%;
+            background-color: var(--card-bg);
+            padding: 30px;
+            border-radius: 12px;
+            box-shadow: 0 4px 20px var(--shadow-dark);
+            min-width: 300px; /* Se mantiene para desktop/tablet */
+        }
+
+        .section-title {
+            color: var(--accent-green);
+            font-size: 1.2em;
+            margin-top: 25px;
+            margin-bottom: 15px;
+            font-weight: 700;
+        }
+        
+        /* ESTILO PARA EL MENSAJE DE WHATSAPP */
+
+        .whatsapp-message-box p {
+            margin: 0;
+            color: #d1d1d1;
+        }
+        
+        .whatsapp-message-box strong {
+            color: var(--accent-green);
+        }
+
+        /* Estilos del Formulario */
+        .form-group label {
+            display: block;
+            margin-bottom: 8px;
+            font-weight: 600;
+            color: var(--secondary-text);
+        }
+
+        #player-id-input {
+            width: 100%;
+            padding: 12px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--input-bg);
+            color: var(--text-color);
+            font-size: 1em;
+            transition: border-color 0.3s;
+            box-sizing: border-box; /* **¡Asegura que el padding no afecte el ancho total!** */
+        }
+        
+        #player-id-input:focus {
+            border-color: var(--primary-blue);
+            outline: none;
+        }
+
+        /* GRID DE OPCIONES DE PAQUETES */
+        #package-options-grid {
+            display: grid;
+            grid-template-columns: repeat(auto-fit, minmax(130px, 1fr));
+            gap: 15px;
+            margin-bottom: 30px;
+        }
+
+        /* Estilos del botón de compra */
+        .recharge-button {
+            width: 100%;
+            padding: 15px;
+            font-size: 1.1em;
+            font-weight: bold;
+            color: var(--button-text-color);
+            background: var(--button-gradient);
+            border: none;
+            border-radius: 8px;
+            cursor: pointer;
+            transition: opacity 0.3s;
+            box-sizing: border-box; /* **¡Asegura que el padding no afecte el ancho total!** */
+        }
+
+        .recharge-button:hover {
+            opacity: 0.9;
+        }
+        
+        /* Mensaje de advertencia bajo el botón */
+        .warning-message {
+            font-size: 0.85em;
+            color: var(--secondary-text);
+            text-align: center;
+            margin-top: 20px;
+        }
+        
+        .warning-message a {
+            color: var(--accent-green);
+            text-decoration: none;
+        }
+
+
+        /* AJUSTES RESPONSIVOS (para móvil) */
+        @media (max-width: 850px) {
+            .product-main {
+                flex-direction: column; 
+                margin-top: 20px;
+                /* REDUCCIÓN DEL PADDING EN MÓVILES para dar más espacio al contenido */
+                padding: 0 10px; 
+            }
+
+            .product-info {
+                order: 1;
+                /* Eliminamos el min-width en móvil para que se ajuste a 100% del espacio disponible */
+                min-width: initial; 
+            }
+
+            .product-form-container {
+                order: 2;
+                padding: 20px 15px; /* Ajuste un poco el padding interno del formulario */
+                 /* Eliminamos el min-width en móvil */
+                min-width: initial; 
+            }
+            
+            #package-options-grid {
+                grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
+            }
+        }
+    </style>
+</head>
+<body>
+<header>
+    <div class="header-left">
+        <a href="index.html" class="logo-link">
+            <img src="images/malok_logo.png" alt="JP STORE Logo" class="logo-img">
+        </a>
+    </div>
+    <div class="header-right">
+        
+        <div class="wallet-container" id="wallet-container" style="display:none;"> 
+            <div class="wallet-display">
+                <i class="fas fa-wallet"></i>
+                <span id="virtual-balance">$. --.--</span>
+            </div>
+            <a href="rechargedwallet.html" class="recharge-btn" title="Recargar Saldo">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+        <div class="search-bar">
+            <input type="text" placeholder="Buscar juego...">
+            <i class="fas fa-search"></i>
+        </div>
+
+        <div class="custom-currency-selector" id="custom-currency-selector">
+            <div class="selected-currency" id="selected-currency">
+                <img src="images/flag_ve.png" alt="Venezuela Flag"> <span>Bs. (VES)</span> <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="currency-options" id="currency-options">
+                <div class="option" data-value="VES">
+                    <img src="images/flag_ve.png" alt="Venezuela Flag"> <span>Bs. (VES)</span>
+                </div>
+                <div class="option" data-value="USD">
+                    <img src="images/flag_us.png" alt="USA Flag"> <span>$ (USD)</span>
+                </div>
+                <div class="option" data-value="JPUSD"> 
+                    <img src="images/favicon.ico" alt="JP USD Flag"> <span>$ (JPUSD)</span>
+                </div>
+                <div class="option" data-value="COP">
+                    <img src="images/flag_co.png" alt="Colombia Flag"> <span>$ (COP)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-icon" id="cart-icon">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-count" id="cart-count">0</span>
+        </div>
+
+        <div class="auth-dropdown" id="auth-dropdown">
+            <button class="auth-btn" id="toggle-login-btn">
+                <i class="fas fa-user-circle"></i>
+                <img src="images/default_user.png" alt="Usuario" class="auth-user-picture" id="auth-user-picture" style="display:none;">
+            </button>
+            
+            <div class="dropdown-content">
+                <a href="#" class="auth-display-name" id="auth-display-name">Iniciar Sesión</a>
+                <hr>
+                
+                <div id="google-login-btn" style="display: block;">
+                    </div>
+                
+                <button id="logout-btn" class="logout-btn" style="display:none;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+<div class="cart-sidebar" id="cart-sidebar">
+    <div class="cart-header">
+        <h2>Mi Carrito</h2>
+        <button id="close-cart-btn"><i class="fas fa-times"></i></button>
+    </div>
+    <div class="cart-items-container">
+        <div class="cart-items" id="cart-items">
+            <p class="empty-cart-message">Tu carrito está vacío.</p>
+        </div>
+    </div>
+    <div class="cart-summary">
+        <p class="total-label">Total:</p>
+        <p class="total-amount"><span id="cart-total">$0.00</span></p>
+        <button class="btn-primary checkout-btn" id="checkout-btn" disabled>Proceder al Pago</button>
+    </div>
+</div>
+    <main class="main-content">
+        <div class="product-main" id="product-container">
+            
+            <div class="product-info">
+                <img id="product-banner-image" class="product-banner-image" src="images/default_banner.jpg" alt="Banner del juego">
+                <div class="text-content">
+                    <h1 id="product-name" class="product-title">Cargando Título...</h1>
+                    <p id="product-description" class="secondary-text">Cargando descripción...</p>
+                </div>
+            </div>
+
+            <div class="product-form-container">
+                <form id="recharge-form">
+                    
+                    <div id="step-one-container"> 
+                        <p class="section-title" id="step-one-title">Paso 1: Ingresa tu ID/Correo</p>
+                        
+                        <div id="player-id-input-group" class="form-group">
+                            <label for="player-id-input" class="player-id-label">ID de Usuario (O Correo Segun el Caso)</label>
+                            <input type="text" id="player-id-input" name="playerId" placeholder="Ingresa tu ID/Correo de Usuario"> 
+                        </div>
+                        
+                        <div id="whatsapp-info-message" class="whatsapp-message-box" style="display:none;">
+                             <p><strong>Recarga con Asistencia:</strong></p>
+                             <p>Debido a que este producto no cuenta con un método de recarga directa por ID, la asistencia para completar la compra se solicitará vía WhatsApp después de confirmar su pago.</p>
+                        </div>
+
+                    </div>
+                    <p class="section-title">Paso 2: Selecciona la Recarga</p>
+                    
+                    <div class="package-options" id="package-options-grid"> 
+                        <p id="packages-loading">Cargando opciones...</p>
+                    </div>
+                    
+                    <button type="submit" class="recharge-button">Añadir al Carrito</button>
+                    <p class="warning-message">Al hacer clic en Comprar, aceptas nuestros <a href="terms.html">Términos de Servicio</a> y <a href="privacy.html">Políticas de Privacidad</a>.</p>
+                </form>
+            </div>
+        </div>
+    </main>
+
+    <footer>
+    </footer>
+
+    <script src="script.js"></script>
+    <script src="load-product-details.js"></script>
+</body>
+</html>

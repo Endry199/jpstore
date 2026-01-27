@@ -1,0 +1,61 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>Iniciar Sesión - JP STORE</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+<style>
+    /* Estilos específicos para centrar la caja de login */
+    .login-container {
+        display: flex;
+        flex-direction: column;
+        align-items: center;
+        justify-content: center;
+        min-height: 100vh; /* Ocupa toda la altura de la ventana */
+        background-color: var(--bg-color); 
+    }
+    .login-box {
+        background-color: var(--card-bg);
+        padding: 40px;
+        border-radius: 10px;
+        box-shadow: 0 4px 15px var(--shadow-dark);
+        text-align: center;
+        width: 90%;
+        max-width: 400px;
+    }
+    .login-box h1 {
+        color: var(--text-color);
+        margin-bottom: 30px;
+        font-size: 1.8em;
+    }
+    /* Contenedor donde se renderizará el botón de Google */
+    #google-login-btn {
+        margin-top: 20px;
+        display: flex; /* Nuevo: Usa Flexbox para centrar */
+        justify-content: center; /* Nuevo: Centra el contenido */
+    }
+</style>
+</head>
+<body>
+
+    <div class="login-container">
+        <div class="login-box">
+            <a href="index.html">
+                <img src="images/malok_logo.png" alt="JP STORE Logo" style="width: 150px; margin-bottom: 20px;">
+            </a>
+            <h1>Inicia Sesión</h1>
+            <p style="color: var(--secondary-text); margin-bottom: 25px;">Usa tu cuenta de Google para acceder.</p>
+            
+            <div id="google-login-btn"></div>
+
+        </div>
+    </div>
+
+    <script src="https://accounts.google.com/gsi/client" async defer></script>
+    
+    <script src="script.js"></script>
+</body>
+</html>

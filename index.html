@@ -1,0 +1,236 @@
+<!DOCTYPE html>
+<html lang="es">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>JP STORE - Recarga Diamantes y Saldo en tus Juegos Favoritos</title>
+    <link rel="stylesheet" href="style.css">
+    <link rel="stylesheet" href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.0.0-beta3/css/all.min.css">
+    <link rel="preload" href="images/malok_logo.png" as="image">
+    <link rel="preload" href="images/flag_ve.png" as="image">
+    <link rel="preload" href="images/flag_us.png" as="image">
+    <link rel="preload" href="images/flag_co.png" as="image">
+    <link rel="preload" href="images/freefire_banner.jpg" as="image">
+    <link rel="preload" href="images/tiktok_banner.jpg" as="image">
+    <link rel="preload" href="images/blooqstrike_banner.jpg" as="image">
+    <link rel="preload" href="images/roblox_banner.jpg" as="image">
+    <link rel="preload" href="images/netflix_banner.jpg" as="image">
+    <link rel="preload" href="images/codm_banner.jpg" as="image">
+    <link rel="shortcut icon" href="images/favicon.ico" type="image/x-icon">
+    <style>
+        /* Estilos para el carrusel - AHORA OCUPANDO TODO EL ANCHO */
+    /* Estilos para el carrusel - MANTENIENDO PROPORCIÓN 1080x432 */
+.carousel-container {
+    width: 100%;
+    /* Eliminamos el height fijo para que sea responsivo */
+    max-width: 1080px; 
+    margin: 0 auto 30px;
+    position: relative;
+    overflow: hidden;
+    /* Esto mantiene la proporción 1080:432 (432/1080 = 40%) */
+    aspect-ratio: 1080 / 432; 
+}
+
+.carousel-slide {
+    display: flex;
+    width: 100%; /* Cambiado de 200% a 100% para manejarlo mejor con JS */
+    height: 100%;
+    transition: transform 0.5s ease-in-out;
+}
+
+.carousel-slide img {
+    width: 100%;
+    height: auto;
+    /* 'contain' asegura que se vea toda la imagen, 'fill' la estira */
+    /* Pero con aspect-ratio en el padre, lo ideal es usar width 100% */
+    object-fit: inherit; 
+    flex-shrink: 0;
+}
+
+/* Ajuste para móviles: ya no necesitas heights fijos */
+@media (max-width: 768px) {
+    .carousel-container {
+        height: auto; /* El aspect-ratio hará el trabajo */
+    }
+}
+    </style>
+</head>
+<body>
+
+<header>
+    <div class="header-left">
+        <a href="index.html" class="logo-link">
+            <img src="images/malok_logo.png" alt="JP STORE Logo" class="logo-img">
+        </a>
+    </div>
+    <div class="header-right">
+        
+        <div class="wallet-container" id="wallet-container" style="display:none;"> 
+            <div class="wallet-display">
+                <i class="fas fa-wallet"></i>
+                <span id="virtual-balance">$. --.--</span>
+            </div>
+            <a href="rechargedwallet.html" class="recharge-btn" title="Recargar Saldo">
+                <i class="fas fa-plus"></i>
+            </a>
+        </div>
+        <div class="search-bar">
+            <input type="text" placeholder="Buscar juego...">
+            <i class="fas fa-search"></i>
+        </div>
+
+        <div class="custom-currency-selector" id="custom-currency-selector">
+            <div class="selected-currency" id="selected-currency">
+                <img src="images/flag_ve.png" alt="Venezuela Flag"> <span>Bs. (VES)</span> <i class="fas fa-chevron-down"></i>
+            </div>
+            <div class="currency-options" id="currency-options">
+                <div class="option" data-value="VES">
+                    <img src="images/flag_ve.png" alt="Venezuela Flag"> <span>Bs. (VES)</span>
+                </div>
+                <div class="option" data-value="USD">
+                    <img src="images/flag_us.png" alt="USA Flag"> <span>$ (USD)</span>
+                </div>
+                <div class="option" data-value="JPUSD"> 
+                    <img src="images/favicon.ico" alt="JP USD Flag"> <span>$ (JPUSD)</span>
+                </div>
+                <div class="option" data-value="COP">
+                    <img src="images/flag_co.png" alt="Colombia Flag"> <span>$ (COP)</span>
+                </div>
+            </div>
+        </div>
+
+        <div class="cart-icon" id="cart-icon">
+            <i class="fas fa-shopping-cart"></i>
+            <span class="cart-count" id="cart-count">0</span>
+        </div>
+
+        <div class="auth-dropdown" id="auth-dropdown">
+            <button class="auth-btn" id="toggle-login-btn">
+                <i class="fas fa-user-circle"></i>
+                <img src="images/default_user.png" alt="Usuario" class="auth-user-picture" id="auth-user-picture" style="display:none;">
+            </button>
+            
+            <div class="dropdown-content">
+                <a href="#" class="auth-display-name" id="auth-display-name">Iniciar Sesión</a>
+                <hr>
+                
+                <div id="google-login-btn" style="display: block;">
+                    </div>
+                
+                <button id="logout-btn" class="logout-btn" style="display:none;">
+                    <i class="fas fa-sign-out-alt"></i> Cerrar Sesión
+                </button>
+            </div>
+        </div>
+    </div>
+</header>
+    <main class="home-main" style="margin-top: 115px;">
+        <section class="hero">
+            <!-- Carrusel de imágenes en lugar del texto -->
+            <div class="carousel-container">
+                <div class="carousel-slide">
+                    <!-- Reemplaza estas rutas con las imágenes reales que quieras usar -->
+                    <img src="images/banner1.jpg" alt="Promoción 1 - Recarga tus juegos favoritos">
+                    <img src="images/banner2.jpg" alt="Promoción 2 - Los mejores precios del mercado">
+                </div>
+                <button class="carousel-btn prev"><i class="fas fa-chevron-left"></i></button>
+                <button class="carousel-btn next"><i class="fas fa-chevron-right"></i></button>
+                <div class="carousel-nav">
+                    <div class="carousel-dot active" data-index="0"></div>
+                    <div class="carousel-dot" data-index="1"></div>
+                </div>
+            </div>
+        </section>
+
+        <section style="padding: 20px;">
+            <h2>Juegos Disponibles</h2>
+            <p class="small-text">Haz clic en tu juego para comenzar la recarga.</p>
+            <div class="product-grid" id="product-grid">
+            </div>
+        </section>
+    </main>
+ 
+    <footer>
+        <div class="footer-content">
+            <p>&copy; 2026 JP STORE. Todos los derechos reservados.</p>
+            <div class="footer-links">
+                <a href="privacy.html">Políticas de Privacidad</a>
+                <a href="terms.html">Términos de Servicio</a>
+            </div>
+            <a href="https://wa.me/584143187185" target="_blank" class="whatsapp-link">
+                <i class="fab fa-whatsapp"></i> Contáctanos por WhatsApp
+            </a>
+        </div>
+    </footer>
+
+    <div class="cart-sidebar" id="cart-sidebar">
+        <div class="cart-header">
+            <h2>Tu Carrito</h2>
+            <button class="close-btn" id="close-cart-btn"><i class="fas fa-times"></i></button>
+        </div>
+        <div class="cart-items-wrapper">
+            <div class="cart-items" id="cart-items">
+                </div>
+        </div>
+        <div class="cart-footer">
+            <div class="cart-total-info">
+                <span>Total:</span>
+                <span id="cart-total">$0.00</span>
+            </div>
+            <button class="btn-primary checkout-btn" id="checkout-btn" disabled>Proceder al Pago</button>
+        </div>
+    </div>
+    <script src="script.js"></script>
+    <script src="load-products.js"></script>
+    <script>
+        // Script para el funcionamiento del carrusel
+        document.addEventListener('DOMContentLoaded', function() {
+            const carouselSlide = document.querySelector('.carousel-slide');
+            const carouselDots = document.querySelectorAll('.carousel-dot');
+            const prevBtn = document.querySelector('.carousel-btn.prev');
+            const nextBtn = document.querySelector('.carousel-btn.next');
+            let currentIndex = 0;
+            const totalSlides = 2; // Porque son 2 imágenes
+            
+            function updateCarousel() {
+                // Cada imagen ocupa el 100% del contenedor
+                carouselSlide.style.transform = `translateX(-${currentIndex * 100}%)`;
+                
+                // Actualizar dots
+                carouselDots.forEach((dot, index) => {
+                    if (index === currentIndex) {
+                        dot.classList.add('active');
+                    } else {
+                        dot.classList.remove('active');
+                    }
+                });
+            }
+            
+            // Navegación con botones
+            prevBtn.addEventListener('click', () => {
+                currentIndex = (currentIndex - 1 + totalSlides) % totalSlides;
+                updateCarousel();
+            });
+            
+            nextBtn.addEventListener('click', () => {
+                currentIndex = (currentIndex + 1) % totalSlides;
+                updateCarousel();
+            });
+            
+            // Navegación con dots
+            carouselDots.forEach(dot => {
+                dot.addEventListener('click', () => {
+                    currentIndex = parseInt(dot.getAttribute('data-index'));
+                    updateCarousel();
+                });
+            });
+            
+            // Auto-play cada 5 segundos
+            setInterval(() => {
+                currentIndex = (currentIndex + 1) % totalSlides;
+                updateCarousel();
+            }, 5000);
+        });
+    </script>
+</body>
+</html>
