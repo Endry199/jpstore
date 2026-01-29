@@ -277,6 +277,7 @@ exports.handler = async function(event, context) {
                     priceUSD: item.priceUSD,
                     priceUSDM: item.priceUSDM,
                     priceVES: item.priceVES,
+                    priceCOP: item.priceCOP, // Agregar COP
                     currency: item.currency
                 });
             });
@@ -410,10 +411,16 @@ exports.handler = async function(event, context) {
     // Iterar sobre los productos del carrito para el detalle
     cartItems.forEach((item, index) => {
         console.log(`\n[LOG handler] Processing cart item ${index + 1} for Telegram:`);
-        console.log(`[LOG handler] item.currency (Inicial): ${item.currency}`);
-        console.log(`[LOG handler] item.priceUSD: ${item.priceUSD}`);
-        console.log(`[LOG handler] item.priceUSDM: ${item.priceUSDM}`);
-        console.log(`[LOG handler] item.priceVES: ${item.priceVES}`);
+        console.log(`[LOG handler] DIAGNÓSTICO DETALLADO del item:`, {
+            game: item.game,
+            packageName: item.packageName,
+            priceUSD: item.priceUSD,
+            priceUSDM: item.priceUSDM,
+            priceVES: item.priceVES,
+            priceCOP: item.priceCOP,
+            currency: item.currency,
+            globalCurrency: currency
+        });
         
         messageText += `*📦 Producto ${index + 1}:*\n`;
         messageText += `🎮 Juego/Servicio: *${item.game || 'N/A'}*\n`;
@@ -431,21 +438,27 @@ exports.handler = async function(event, context) {
             messageText += `👤 ID de Jugador: *${item.playerId}*\n`;
         }
         
-        // Lógica de precios
+        // Lógica de precios CORREGIDA
         let itemPrice;
         let itemCurrency = currency; // Usa la moneda global
         
         console.log(`[LOG handler] itemCurrency (Seleccionada - Global): ${itemCurrency}`);
 
-        if (itemCurrency === 'USDM') { 
+        if (itemCurrency === 'USDM' || itemCurrency === 'JPUSD') { 
+            // 🚨 CORRECCIÓN: JPUSD también usa priceUSDM
             itemPrice = item.priceUSDM;
-            console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL USDM. Price usado: ${itemPrice}. Fuente: item.priceUSDM`);
+            console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL ${itemCurrency}. Price usado: ${itemPrice}. Fuente: item.priceUSDM`);
         } else if (itemCurrency === 'VES') {
             itemPrice = item.priceVES;
             console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL VES. Price usado: ${itemPrice}. Fuente: item.priceVES`);
+        } else if (itemCurrency === 'COP') {
+            // 🚨 CORRECCIÓN: Agregar soporte para COP
+            itemPrice = item.priceCOP;
+            console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL COP. Price usado: ${itemPrice}. Fuente: item.priceCOP`);
         } else {
+            // Fallback para USD común u otras monedas
             itemPrice = item.priceUSD;
-            console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL USD/Fallback. Price usado: ${itemPrice}. Fuente: item.priceUSD`);
+            console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL ${itemCurrency || 'USD'}/Fallback. Price usado: ${itemPrice}. Fuente: item.priceUSD`);
         }
         
         console.log(`[LOG handler] Final itemPrice (Raw): ${itemPrice}`);
@@ -593,10 +606,13 @@ exports.handler = async function(event, context) {
             let packageName = item.packageName || 'Paquete Desconocido';
             
             let itemPrice;
-            if (currency === 'USDM') {
+            // 🚨 CORRECCIÓN PARA EMAIL TAMBIÉN
+            if (currency === 'USDM' || currency === 'JPUSD') {
                 itemPrice = item.priceUSDM || 0;
             } else if (currency === 'VES') {
                 itemPrice = item.priceVES || 0;
+            } else if (currency === 'COP') {
+                itemPrice = item.priceCOP || 0;
             } else {
                 itemPrice = item.priceUSD || 0;
             }
