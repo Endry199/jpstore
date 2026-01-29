@@ -209,12 +209,21 @@ exports.handler = async function(event, context) {
         cartDetailsLength: cartDetails ? cartDetails.length : 0
     });
     
+    // 🚨 CORRECCIÓN CRÍTICA: Limpiar y validar finalPrice
+    let cleanedFinalPrice = finalPrice;
+    if (finalPrice) {
+        // Eliminar símbolos de moneda y caracteres no numéricos (excepto punto decimal)
+        cleanedFinalPrice = finalPrice.toString().replace(/[^\d.]/g, '');
+        console.log(`[LOG handler] Original finalPrice: "${finalPrice}" -> Cleaned: "${cleanedFinalPrice}"`);
+    }
+    
     // Validar campos requeridos
-    if (!finalPrice) {
-        console.error(`[LOG handler] MISSING VARIABLE: finalPrice is required`);
+    if (!cleanedFinalPrice || isNaN(parseFloat(cleanedFinalPrice))) {
+        console.error(`[LOG handler] MISSING/INVALID VARIABLE: finalPrice is required and must be a valid number`);
+        console.error(`[LOG handler] Received finalPrice: "${finalPrice}", Cleaned: "${cleanedFinalPrice}"`);
         return {
             statusCode: 400,
-            body: JSON.stringify({ message: "Falta el campo 'finalPrice'." })
+            body: JSON.stringify({ message: "Falta o es inválido el campo 'finalPrice'. Debe ser un número válido." })
         };
     }
     
@@ -277,7 +286,7 @@ exports.handler = async function(event, context) {
                     priceUSD: item.priceUSD,
                     priceUSDM: item.priceUSDM,
                     priceVES: item.priceVES,
-                    priceCOP: item.priceCOP, // Agregar COP
+                    priceCOP: item.priceCOP,
                     currency: item.currency
                 });
             });
@@ -337,9 +346,10 @@ exports.handler = async function(event, context) {
         console.log(`[LOG handler] DIAGNÓSTICO: firstItem.game = "${firstItem.game}"`);
         console.log(`[LOG handler] DIAGNÓSTICO: isGameWalletRecharge = ${isGameWalletRecharge}`);
         
+        // 🚨 USAR cleanedFinalPrice en lugar de finalPrice original
         const transactionToInsert = {
             id_transaccion: id_transaccion_generado,
-            finalPrice: parseFloat(finalPrice),
+            finalPrice: parseFloat(cleanedFinalPrice),
             currency: currency,
             paymentMethod: paymentMethod,
             email: email,
@@ -392,7 +402,8 @@ exports.handler = async function(event, context) {
     
     console.log(`[LOG handler] isWalletRecharge: ${isWalletRecharge} (game: "${firstItem.game}")`);
     console.log(`[LOG handler] GLOBAL currency: ${currency}`);
-    console.log(`[LOG handler] GLOBAL finalPrice: ${finalPrice}`);
+    console.log(`[LOG handler] GLOBAL cleanedFinalPrice: ${cleanedFinalPrice}`);
+    console.log(`[LOG handler] GLOBAL original finalPrice: ${finalPrice}`);
 
     let messageText = isWalletRecharge 
         ? `💸 Nueva Recarga de Billetera JP Store 💸\n\n`
@@ -445,18 +456,15 @@ exports.handler = async function(event, context) {
         console.log(`[LOG handler] itemCurrency (Seleccionada - Global): ${itemCurrency}`);
 
         if (itemCurrency === 'USDM' || itemCurrency === 'JPUSD') { 
-            // 🚨 CORRECCIÓN: JPUSD también usa priceUSDM
             itemPrice = item.priceUSDM;
             console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL ${itemCurrency}. Price usado: ${itemPrice}. Fuente: item.priceUSDM`);
         } else if (itemCurrency === 'VES') {
             itemPrice = item.priceVES;
             console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL VES. Price usado: ${itemPrice}. Fuente: item.priceVES`);
         } else if (itemCurrency === 'COP') {
-            // 🚨 CORRECCIÓN: Agregar soporte para COP
             itemPrice = item.priceCOP;
             console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL COP. Price usado: ${itemPrice}. Fuente: item.priceCOP`);
         } else {
-            // Fallback para USD común u otras monedas
             itemPrice = item.priceUSD;
             console.log(`[LOG handler] LÓGICA APLICADA: GLOBAL ${itemCurrency || 'USD'}/Fallback. Price usado: ${itemPrice}. Fuente: item.priceUSD`);
         }
@@ -472,7 +480,9 @@ exports.handler = async function(event, context) {
 
     // Información de Pago y Contacto (Global)
     messageText += `\n*RESUMEN DE PAGO*\n`;
-    messageText += `💰 *TOTAL A PAGAR:* *${finalPrice} ${currency}*\n`;
+    // 🚨 CORRECCIÓN CRÍTICA: Usar cleanedFinalPrice y mostrar con formato
+    const displayFinalPrice = parseFloat(cleanedFinalPrice).toFixed(2);
+    messageText += `💰 *TOTAL A PAGAR:* *${displayFinalPrice} ${currency}*\n`;
     messageText += `💳 Método de Pago: *${paymentMethod.replace('-', ' ').toUpperCase()}*\n`;
     messageText += `📧 Correo Cliente: ${email}\n`;
     
@@ -534,7 +544,7 @@ exports.handler = async function(event, context) {
             // Asegúrate de que el archivo exista antes de intentar leerlo
             if (fs.existsSync(paymentReceiptFile.filepath)) {
                 const fileStream = fs.createReadStream(paymentReceiptFile.filepath);
-                const captionText = `*Comprobante de Pago* para Transacción \`${id_transaccion_generado}\`\n\n*Método:* ${paymentMethod.replace('-', ' ').toUpperCase()}\n*Monto:* ${finalPrice} ${currency}`;
+                const captionText = `*Comprobante de Pago* para Transacción \`${id_transaccion_generado}\`\n\n*Método:* ${paymentMethod.replace('-', ' ').toUpperCase()}\n*Monto:* ${displayFinalPrice} ${currency}`;
 
                 const form = new FormData();
                 form.append('chat_id', TELEGRAM_CHAT_ID);
@@ -606,7 +616,6 @@ exports.handler = async function(event, context) {
             let packageName = item.packageName || 'Paquete Desconocido';
             
             let itemPrice;
-            // 🚨 CORRECCIÓN PARA EMAIL TAMBIÉN
             if (currency === 'USDM' || currency === 'JPUSD') {
                 itemPrice = item.priceUSDM || 0;
             } else if (currency === 'VES') {
@@ -635,7 +644,6 @@ exports.handler = async function(event, context) {
                     </div>
                 `;
             } else if (game.includes('Recarga de Saldo') && item.google_id) {
-                // 🔍 CORRECCIÓN AQUÍ TAMBIÉN
                 playerInfoEmail = `
                     <div style="margin-top: 5px;">
                         <span style="color: #00ff00; font-size: 12px;">• ID Google: ${item.google_id}</span><br>
@@ -880,7 +888,7 @@ exports.handler = async function(event, context) {
                         
                         <div class="total-section">
                             <div>Total a Pagar</div>
-                            <div class="total-amount">${parseFloat(finalPrice).toFixed(2)} ${currency}</div>
+                            <div class="total-amount">${displayFinalPrice} ${currency}</div>
                             <div style="margin-top: 15px; font-size: 18px;">
                                 Método: <strong>${paymentMethod.replace('-', ' ').toUpperCase()}</strong>
                             </div>

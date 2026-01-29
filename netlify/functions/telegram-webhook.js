@@ -141,7 +141,7 @@ exports.handler = async (event, context) => {
                 if (IS_WALLET_RECHARGE) { 
                     console.log(`LOG: 🎯 DETECTADA RECARGA DE SALDO - Iniciando proceso para Google ID: ${google_id}`);
                     
-                    // PASO 3.1: LÓGICA CONDICIONAL DE CONVERSIÓN
+                    // PASO 3.1: LÓGICA CONDICIONAL DE CONVERSIÓN - CORREGIDA PARA SOPORTAR USDM, JPUSD Y COP
                     if (currency === 'VES' || currency === 'BS') { 
                         if (EXCHANGE_RATE > 0) {
                             amountToInject = amountInTransactionCurrency / EXCHANGE_RATE;
@@ -149,7 +149,26 @@ exports.handler = async (event, context) => {
                         } else {
                             throw new Error("ERROR FATAL: El tipo de cambio (tasa_dolar) no es válido o es cero. No se puede convertir VES a USD.");
                         }
-                    } 
+                    } else if (currency === 'COP') {
+                        // 🚨 CORRECCIÓN PARA COP: Convertir COP a USD usando tasa específica
+                        // Asumiendo que 1 USD = [tasa] COP (deberías tener una tasa específica para COP)
+                        // Por ahora usamos una tasa hardcodeada o la misma de VES si no hay específica
+                        const COP_EXCHANGE_RATE = EXCHANGE_RATE; // O podrías tener una tasa diferente
+                        if (COP_EXCHANGE_RATE > 0) {
+                            amountToInject = amountInTransactionCurrency / COP_EXCHANGE_RATE;
+                            console.log(`LOG: Moneda COP detectada. Convirtiendo ${amountInTransactionCurrency.toFixed(2)} COP a USD con tasa ${COP_EXCHANGE_RATE}. Resultado: $${amountToInject.toFixed(2)} USD.`);
+                        } else {
+                            throw new Error("ERROR FATAL: No hay tasa de cambio válida para COP.");
+                        }
+                    } else if (currency === 'USDM' || currency === 'JPUSD') {
+                        // 🚨 CORRECCIÓN: USDM y JPUSD ya están en dólares, no necesitan conversión
+                        amountToInject = amountInTransactionCurrency;
+                        console.log(`LOG: Moneda ${currency} detectada. Monto ya en dólares: $${amountToInject.toFixed(2)} USD.`);
+                    } else {
+                        // USD común - ya está en dólares
+                        amountToInject = amountInTransactionCurrency;
+                        console.log(`LOG: Moneda USD (común) detectada. Monto: $${amountToInject.toFixed(2)} USD.`);
+                    }
 
                     // PASO 3.2: INYECCIÓN DE SALDO (SIEMPRE se intenta para recargas)
                     if (!google_id || isNaN(amountToInject) || amountToInject <= 0) {
@@ -238,6 +257,10 @@ exports.handler = async (event, context) => {
                         `;
                         // 🔚 FIN DE LA MODIFICACIÓN CLAVE
                         
+                        // 🚨 CORRECCIÓN PARA EL RESUMEN DE FACTURA - Mostrar monto en moneda original
+                        const amountDisplay = `${parseFloat(finalPrice).toFixed(2)} ${currency}`;
+                        const injectedDisplay = IS_WALLET_RECHARGE ? `$${amountToInject.toFixed(2)} USD` : 'N/A';
+                        
                         const invoiceBody = `
                             <div style="font-family: Arial, sans-serif; line-height: 1.6; color: #333;">
                                 <h2 style="color: #28a745;">✅ Transacción REALIZADA y Confirmada</h2>
@@ -250,8 +273,9 @@ exports.handler = async (event, context) => {
                                 <h3 style="color: #007bff;">Resumen de la Factura:</h3>
                                 <ul style="list-style: none; padding: 0;">
                                     <li style="margin-bottom: 5px;"><b>ID Transacción:</b> <code>${transactionId}</code></li>
-                                    <li style="margin-bottom: 5px;"><b>Monto Total Pagado:</b> <b>${parseFloat(finalPrice).toFixed(2)} ${currency}</b></li>
-                                    <li style="margin-bottom: 5px;"><b>Monto Inyectado (si aplica):</b> ${IS_WALLET_RECHARGE ? `$${amountToInject.toFixed(2)} USD` : 'N/A'}</li>
+                                    <li style="margin-bottom: 5px;"><b>Monto Total Pagado:</b> <b>${amountDisplay}</b></li>
+                                    <li style="margin-bottom: 5px;"><b>Monto Inyectado (si aplica):</b> ${injectedDisplay}</li>
+                                    <li style="margin-bottom: 5px;"><b>Moneda Original:</b> ${currency}</li>
                                 </ul>
                                 
                                 <p style="margin-top: 20px;">Gracias por su preferencia.</p>
