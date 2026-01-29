@@ -70,14 +70,14 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // 🎯 MODIFICADO: Símbolo para COP
+        // Símbolo para COP y otras monedas
         const currencySymbol = (currency === 'VES') ? 'Bs.' : (currency === 'COP' ? 'COP$' : '$');
 
         data.paquetes.forEach(pkg => {
             const usdPrice = parseFloat(pkg.precio_usd || 0).toFixed(2);
             const vesPrice = parseFloat(pkg.precio_ves || 0).toFixed(2);
             const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
-            const copPrice = parseFloat(pkg.precio_cop || 0).toFixed(2); // 🎯 Aseguramos valor numérico
+            const copPrice = parseFloat(pkg.precio_cop || 0).toFixed(2);
 
             let displayPrice;
             if (currency === 'VES') {
@@ -85,8 +85,8 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (currency === 'JPUSD') {
                 displayPrice = jpusdPrice;
             } else if (currency === 'COP') {
-                // Si el precio COP es 0.00, usamos el USD por defecto
-                displayPrice = (pkg.precio_cop && pkg.precio_cop > 0) ? copPrice : usdPrice;
+                // ✅ MODIFICADO: Muestra copPrice directamente (aunque sea 0.00)
+                displayPrice = copPrice;
             } else { 
                 displayPrice = usdPrice;
             }
@@ -117,7 +117,6 @@ document.addEventListener('DOMContentLoaded', () => {
         const packageOptionsGrid = document.getElementById('package-options-grid');
         if (!packageOptionsGrid) return; 
         
-        // 🎯 MODIFICADO: Símbolo dinámico incluyendo COP
         const currencySymbol = (currency === 'VES') ? 'Bs.' : (currency === 'COP' ? 'COP$' : '$');
 
         const packageElements = packageOptionsGrid.querySelectorAll('.package-option');
@@ -134,11 +133,17 @@ document.addEventListener('DOMContentLoaded', () => {
                 priceKeyDataset = 'priceUsd';
             }
 
-            // Lógica de respaldo: si la moneda seleccionada (ej. COP) está en 0, mostrar USD
             const priceVal = parseFloat(element.dataset[priceKeyDataset]);
             const priceFallback = parseFloat(element.dataset.priceUsd);
             
-            const finalPrice = (priceVal > 0) ? priceVal.toFixed(2) : priceFallback.toFixed(2);
+            // ✅ MODIFICADO: Si la moneda es COP, muestra el valor real de COP siempre (incluido 0)
+            let finalPrice;
+            if (currency === 'COP') {
+                finalPrice = priceVal.toFixed(2);
+            } else {
+                // Mantiene el respaldo a USD para otras monedas si es necesario
+                finalPrice = (priceVal > 0) ? priceVal.toFixed(2) : priceFallback.toFixed(2);
+            }
             
             element.querySelector('.package-price').textContent = `${currencySymbol} ${finalPrice}`;
         });
