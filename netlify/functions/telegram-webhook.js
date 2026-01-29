@@ -120,7 +120,16 @@ exports.handler = async (event, context) => {
                     console.warn(`WARN: Email en transacción es nulo y google_id es nulo. No se intentó búsqueda secundaria.`);
                 }
                 
-                const IS_WALLET_RECHARGE = game === 'Recarga de Saldo';
+                // 🔍 DIAGNÓSTICO DETALLADO DEL PROBLEMA
+                console.log(`🔍 LOG DIAGNÓSTICO: game value from DB = "${game}"`);
+                console.log(`🔍 LOG DIAGNÓSTICO: game type = ${typeof game}`);
+                console.log(`🔍 LOG DIAGNÓSTICO: Comparing with 'Recarga de Saldo'`);
+                console.log(`🔍 LOG DIAGNÓSTICO: game === 'Recarga de Saldo' = ${game === 'Recarga de Saldo'}`);
+                console.log(`🔍 LOG DIAGNÓSTICO: game.trim() === 'Recarga de Saldo' = ${game ? game.trim() === 'Recarga de Saldo' : 'game is null/undefined'}`);
+                
+                // DETECCIÓN MEJORADA DE RECARGA DE SALDO
+                const IS_WALLET_RECHARGE = game && game.trim() === 'Recarga de Saldo';
+                console.log(`🔍 LOG DIAGNÓSTICO: IS_WALLET_RECHARGE = ${IS_WALLET_RECHARGE}`);
 
                 const amountInTransactionCurrency = parseFloat(finalPrice);
                 let amountToInject = amountInTransactionCurrency;
@@ -129,15 +138,13 @@ exports.handler = async (event, context) => {
 
 
                 // -------------------------------------------------------------
-                // 3. LÓGICA DE INYECCIÓN CONDICIONAL - CORREGIDA
+                // 3. LÓGICA DE INYECCIÓN CONDICIONAL - CORREGIDA DEFINITIVAMENTE
                 // -------------------------------------------------------------
                 
-                // SOLO CAMBIO CLAVE: Separar la lógica de inyección del estado actual
-                // PRIMERO verificar si es recarga de saldo, LUEGO verificar estado
+                console.log(`LOG: ⚡ PROCESANDO - Estado actual: ${currentStatus}, Es recarga: ${IS_WALLET_RECHARGE}`);
                 
                 if (IS_WALLET_RECHARGE) { 
-                    // LOG DE DIAGNÓSTICO
-                    console.log(`LOG: 🎯 DETECTADA RECARGA DE SALDO - Google ID: ${google_id}, Monto: ${finalPrice} ${currency}`);
+                    console.log(`LOG: 🎯 INICIANDO PROCESO DE RECARGA DE SALDO para Google ID: ${google_id}`);
                     
                     // PASO 3.1: LÓGICA CONDICIONAL DE CONVERSIÓN
                     if (currency === 'VES' || currency === 'BS') { 
@@ -151,11 +158,12 @@ exports.handler = async (event, context) => {
 
                     // PASO 3.2: INYECCIÓN DE SALDO (SIEMPRE se intenta para recargas)
                     if (!google_id || isNaN(amountToInject) || amountToInject <= 0) {
-                        injectionMessage = `\n\n❌ <b>ERROR DE INYECCIÓN DE SALDO:</b> Datos incompletos (Google ID: ${google_id}, Monto: ${finalPrice}). <b>¡REVISIÓN MANUAL REQUERIDA!</b>`;
+                        console.error(`LOG: ❌ ERROR - Datos inválidos para inyección: Google ID: ${google_id}, Monto: ${amountToInject}`);
+                        injectionMessage = `\n\n❌ <b>ERROR DE INYECCIÓN DE SALDO:</b> Datos incompletos (Google ID: ${google_id || 'NULO'}, Monto: ${finalPrice}). <b>¡REVISIÓN MANUAL REQUERIDA!</b>`;
                         updateDBSuccess = false;
                     } else {
                         // 4. INYECTAR SALDO AL CLIENTE (Usando la función RPC)
-                        console.log(`LOG: Intentando inyectar $${amountToInject.toFixed(2)} a 'user_id' ${google_id} usando RPC.`);
+                        console.log(`LOG: 💰 INYECTANDO SALDO - $${amountToInject.toFixed(2)} a 'user_id' ${google_id}`);
                         
                         try {
                             const { error: balanceUpdateError } = await supabase
@@ -171,7 +179,7 @@ exports.handler = async (event, context) => {
                                 throw new Error("Fallo en la inyección de saldo.");
                             }
                             
-                            console.log(`LOG: ✅ Inyección de saldo exitosa para ${google_id}.`);
+                            console.log(`LOG: ✅ INYECCIÓN EXITOSA - $${amountToInject.toFixed(2)} USD inyectados a ${google_id}`);
                             injectionMessage = `\n\n💰 <b>INYECCIÓN DE SALDO EXITOSA:</b> Se inyectaron <b>$${amountToInject.toFixed(2)} USD</b> a la billetera del cliente (<code>${google_id}</code>).`;
                             
                             // Mensaje adicional si ya estaba REALIZADA
@@ -185,7 +193,8 @@ exports.handler = async (event, context) => {
                         }
                     }
                 } else {
-                    // Si NO es 'Recarga de Saldo' (es un producto)
+                    // Si NO es 'Recarga de Saldo' (es un producto normal)
+                    console.log(`LOG: 🛒 ES PRODUCTO NORMAL - Game: "${game}"`);
                     if (currentStatus === NEW_STATUS) {
                         injectionMessage = `\n\n🛒 <b>PRODUCTO ENTREGADO ✅:</b> La transacción ya estaba marcada como realizada.`;
                     } else {
@@ -197,28 +206,30 @@ exports.handler = async (event, context) => {
                 // 5. ACTUALIZACIÓN DEL ESTADO... 
                 // Solo se actualiza si el estado actual es diferente y el proceso fue exitoso.
                 if (currentStatus !== NEW_STATUS && updateDBSuccess) {
-                    console.log(`LOG: Actualizando estado de transacción ${transactionId} a ${NEW_STATUS}.`);
+                    console.log(`LOG: 🔄 Actualizando estado de transacción ${transactionId} a ${NEW_STATUS}.`);
                     const { error: updateError } = await supabase
                         .from('transactions')
                         .update({ 
                             status: NEW_STATUS
                         })
-                        .eq('id_transaccion', transactionId)
-                        .in('status', ['pendiente', 'CONFIRMADO']); 
+                        .eq('id_transaccion', transactionId);
+                        // .in('status', ['pendiente', 'CONFIRMADO']); // Eliminado para debug
                     
                     if (updateError) {
                         console.error(`ERROR DB: Fallo al actualizar el estado a ${NEW_STATUS}.`, updateError.message);
                         injectionMessage += `\n\n⚠️ <b>ADVERTENCIA:</b> Fallo al actualizar el estado de la transacción: ${updateError.message}`;
                         updateDBSuccess = false; 
+                    } else {
+                        console.log(`LOG: ✅ Estado actualizado exitosamente a ${NEW_STATUS}.`);
                     }
                 } else if (currentStatus === NEW_STATUS) {
-                    console.log(`LOG: Estado ya era ${NEW_STATUS}, no se actualiza.`);
+                    console.log(`LOG: ℹ️ Estado ya era ${NEW_STATUS}, no se actualiza.`);
                 }
                 
                 // 5.5. 📧 LÓGICA DE ENVÍO DE CORREO DE FACTURA (SIMPLIFICADA)
                 // ENVIAR CORREO SIEMPRE QUE EL PROCESO SEA EXITOSO, SIN IMPORTAR EL ESTADO PREVIO
                 if (updateDBSuccess) {
-                    console.log(`LOG: Preparando envío de email simplificado. Email cliente: ${emailCliente || 'NO ENCONTRADO'}.`);
+                    console.log(`LOG: 📧 Preparando envío de email. Email cliente: ${emailCliente || 'NO ENCONTRADO'}.`);
 
                     if (emailCliente) {
                         const invoiceSubject = `✅ ¡Pedido Entregado! Factura #${transactionId} - ${game}`;
@@ -270,9 +281,10 @@ exports.handler = async (event, context) => {
                 const finalStatusText = (currentStatus === NEW_STATUS || updateDBSuccess) ? NEW_STATUS : 'ERROR CRÍTICO';
                 const finalStatusEmoji = (currentStatus === NEW_STATUS || updateDBSuccess) ? '✅' : '❌';
 
+                console.log(`LOG: 📊 RESUMEN FINAL - Estado: ${finalStatusText}, Es recarga: ${IS_WALLET_RECHARGE}, Mensaje: ${injectionMessage.substring(0, 50)}...`);
 
                 // 6. CONFIRMACIÓN Y EDICIÓN DEL MENSAJE DE TELEGRAM...
-                console.log("LOG: Editando mensaje de Telegram.");
+                console.log("LOG: ✏️ Editando mensaje de Telegram.");
                 
                 const statusMarker = `\n\n------------------------------------------------\n` +
                                      `${finalStatusEmoji} <b>ESTADO FINAL: ${finalStatusText}</b>\n` +
@@ -288,7 +300,7 @@ exports.handler = async (event, context) => {
                     {}
                 );
                 
-                console.log(`LOG: >>> FIN PROCESO DE MARCADO. Transacción ID: ${transactionId} <<<`);
+                console.log(`LOG: ✅ FIN PROCESO DE MARCADO. Transacción ID: ${transactionId} <<<`);
                 
             } catch (e) {
                 console.error("ERROR FATAL en callback_query handler (Catch block):", e.message);
