@@ -83,7 +83,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const usdPrice = parseFloat(pkg.precio_usd || 0).toFixed(2);
             const vesPrice = parseFloat(pkg.precio_ves || 0).toFixed(2);
             // 🎯 NUEVO: OBTENER PRECIO JPUSD
-            const jpusdPrice = parseFloat(pkg.precio_jpusd || 0).toFixed(2); 
+            const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
 
             // 🎯 LÓGICA MODIFICADA PARA SELECCIONAR EL PRECIO A MOSTRAR
             let displayPrice;
