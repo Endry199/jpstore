@@ -129,63 +129,73 @@ exports.handler = async (event, context) => {
 
 
                 // -------------------------------------------------------------
-                // 3. LÓGICA DE INYECCIÓN CONDICIONAL 
+                // 3. LÓGICA DE INYECCIÓN CONDICIONAL - CORREGIDA
                 // -------------------------------------------------------------
                 
-                if (currentStatus === NEW_STATUS) {
-                    injectionMessage = "\n\n⚠️ <b>NOTA:</b> La transacción ya estaba en estado 'REALIZADA'. El saldo no fue inyectado de nuevo.";
-                } else {
+                // SOLO CAMBIO CLAVE: Separar la lógica de inyección del estado actual
+                // PRIMERO verificar si es recarga de saldo, LUEGO verificar estado
+                
+                if (IS_WALLET_RECHARGE) { 
+                    // LOG DE DIAGNÓSTICO
+                    console.log(`LOG: 🎯 DETECTADA RECARGA DE SALDO - Google ID: ${google_id}, Monto: ${finalPrice} ${currency}`);
                     
-                    if (IS_WALLET_RECHARGE) { 
-                        // PASO 3.1: LÓGICA CONDICIONAL DE CONVERSIÓN
-                        if (currency === 'VES' || currency === 'BS') { 
-                            if (EXCHANGE_RATE > 0) {
-                                amountToInject = amountInTransactionCurrency / EXCHANGE_RATE;
-                                console.log(`LOG: Moneda VES detectada. Convirtiendo ${amountInTransactionCurrency.toFixed(2)} VES a USD con tasa ${EXCHANGE_RATE}. Resultado: $${amountToInject.toFixed(2)} USD.`);
-                            } else {
-                                throw new Error("ERROR FATAL: El tipo de cambio (tasa_dolar) no es válido o es cero. No se puede convertir VES a USD.");
-                            }
-                        } 
-
-                        // PASO 3.2: INYECCIÓN DE SALDO
-                        if (!google_id || isNaN(amountToInject) || amountToInject <= 0) {
-                            injectionMessage = `\n\n❌ <b>ERROR DE INYECCIÓN DE SALDO:</b> Datos incompletos (Google ID: ${google_id}, Monto: ${finalPrice}). <b>¡REVISIÓN MANUAL REQUERIDA!</b>`;
-                            updateDBSuccess = false;
+                    // PASO 3.1: LÓGICA CONDICIONAL DE CONVERSIÓN
+                    if (currency === 'VES' || currency === 'BS') { 
+                        if (EXCHANGE_RATE > 0) {
+                            amountToInject = amountInTransactionCurrency / EXCHANGE_RATE;
+                            console.log(`LOG: Moneda VES detectada. Convirtiendo ${amountInTransactionCurrency.toFixed(2)} VES a USD con tasa ${EXCHANGE_RATE}. Resultado: $${amountToInject.toFixed(2)} USD.`);
                         } else {
-                            // 4. INYECTAR SALDO AL CLIENTE (Usando la función RPC)
-                            console.log(`LOG: Intentando inyectar $${amountToInject.toFixed(2)} a 'user_id' ${google_id} usando RPC.`);
-                            
-                            try {
-                                const { error: balanceUpdateError } = await supabase
-                                    .rpc('incrementar_saldo', { 
-                                        p_user_id: google_id, 
-                                        p_monto: amountToInject.toFixed(2)
-                                    }); 
-                                    
-                                if (balanceUpdateError) {
-                                    console.error(`ERROR DB: Fallo al inyectar saldo a ${google_id}. Mensaje: ${balanceUpdateError.message}.`);
-                                    injectionMessage = `\n\n❌ <b>ERROR CRÍTICO AL INYECTAR SALDO:</b> No se pudo actualizar la billetera del cliente (<code>${google_id}</code>). <br/>${balanceUpdateError.message}`;
-                                    updateDBSuccess = false; 
-                                    throw new Error("Fallo en la inyección de saldo.");
-                                }
-                                
-                                console.log(`LOG: Inyección de saldo exitosa para ${google_id}.`);
-                                injectionMessage = `\n\n💰 <b>INYECCIÓN DE SALDO EXITOSA:</b> Se inyectaron <b>$${amountToInject.toFixed(2)} USD</b> a la billetera del cliente (<code>${google_id}</code>).`;
-                            } catch (e) {
-                                console.error("ERROR CRITICO: Falló la llamada RPC para inyección de saldo.", e.message);
-                                updateDBSuccess = false;
-                                throw new Error(`Falló la inyección atómica (RPC). Error: ${e.message}`); 
-                            }
+                            throw new Error("ERROR FATAL: El tipo de cambio (tasa_dolar) no es válido o es cero. No se puede convertir VES a USD.");
                         }
+                    } 
+
+                    // PASO 3.2: INYECCIÓN DE SALDO (SIEMPRE se intenta para recargas)
+                    if (!google_id || isNaN(amountToInject) || amountToInject <= 0) {
+                        injectionMessage = `\n\n❌ <b>ERROR DE INYECCIÓN DE SALDO:</b> Datos incompletos (Google ID: ${google_id}, Monto: ${finalPrice}). <b>¡REVISIÓN MANUAL REQUERIDA!</b>`;
+                        updateDBSuccess = false;
                     } else {
-                        // Si NO es 'Recarga de Saldo' (es un producto)
-                        injectionMessage = `\n\n🛒 <b>PRODUCTO ENTREGADO ✅: No se requería inyección de saldo.</b>`;
+                        // 4. INYECTAR SALDO AL CLIENTE (Usando la función RPC)
+                        console.log(`LOG: Intentando inyectar $${amountToInject.toFixed(2)} a 'user_id' ${google_id} usando RPC.`);
+                        
+                        try {
+                            const { error: balanceUpdateError } = await supabase
+                                .rpc('incrementar_saldo', { 
+                                    p_user_id: google_id, 
+                                    p_monto: amountToInject.toFixed(2)
+                                }); 
+                                
+                            if (balanceUpdateError) {
+                                console.error(`ERROR DB: Fallo al inyectar saldo a ${google_id}. Mensaje: ${balanceUpdateError.message}.`);
+                                injectionMessage = `\n\n❌ <b>ERROR CRÍTICO AL INYECTAR SALDO:</b> No se pudo actualizar la billetera del cliente (<code>${google_id}</code>). <br/>${balanceUpdateError.message}`;
+                                updateDBSuccess = false; 
+                                throw new Error("Fallo en la inyección de saldo.");
+                            }
+                            
+                            console.log(`LOG: ✅ Inyección de saldo exitosa para ${google_id}.`);
+                            injectionMessage = `\n\n💰 <b>INYECCIÓN DE SALDO EXITOSA:</b> Se inyectaron <b>$${amountToInject.toFixed(2)} USD</b> a la billetera del cliente (<code>${google_id}</code>).`;
+                            
+                            // Mensaje adicional si ya estaba REALIZADA
+                            if (currentStatus === NEW_STATUS) {
+                                injectionMessage += `\n\n⚠️ <b>NOTA:</b> La transacción ya estaba en estado 'REALIZADA'. Se verificó e inyectó el saldo.`;
+                            }
+                        } catch (e) {
+                            console.error("ERROR CRITICO: Falló la llamada RPC para inyección de saldo.", e.message);
+                            updateDBSuccess = false;
+                            throw new Error(`Falló la inyección atómica (RPC). Error: ${e.message}`); 
+                        }
+                    }
+                } else {
+                    // Si NO es 'Recarga de Saldo' (es un producto)
+                    if (currentStatus === NEW_STATUS) {
+                        injectionMessage = `\n\n🛒 <b>PRODUCTO ENTREGADO ✅:</b> La transacción ya estaba marcada como realizada.`;
+                    } else {
+                        injectionMessage = `\n\n🛒 <b>PRODUCTO ENTREGADO ✅:</b> No se requería inyección de saldo.`;
                     }
                 } 
 
 
                 // 5. ACTUALIZACIÓN DEL ESTADO... 
-                // Solo se actualiza si el estado actual es diferente y la inyección/proceso fue exitoso.
+                // Solo se actualiza si el estado actual es diferente y el proceso fue exitoso.
                 if (currentStatus !== NEW_STATUS && updateDBSuccess) {
                     console.log(`LOG: Actualizando estado de transacción ${transactionId} a ${NEW_STATUS}.`);
                     const { error: updateError } = await supabase
@@ -201,10 +211,13 @@ exports.handler = async (event, context) => {
                         injectionMessage += `\n\n⚠️ <b>ADVERTENCIA:</b> Fallo al actualizar el estado de la transacción: ${updateError.message}`;
                         updateDBSuccess = false; 
                     }
+                } else if (currentStatus === NEW_STATUS) {
+                    console.log(`LOG: Estado ya era ${NEW_STATUS}, no se actualiza.`);
                 }
                 
                 // 5.5. 📧 LÓGICA DE ENVÍO DE CORREO DE FACTURA (SIMPLIFICADA)
-                if (currentStatus !== NEW_STATUS && updateDBSuccess) {
+                // ENVIAR CORREO SIEMPRE QUE EL PROCESO SEA EXITOSO, SIN IMPORTAR EL ESTADO PREVIO
+                if (updateDBSuccess) {
                     console.log(`LOG: Preparando envío de email simplificado. Email cliente: ${emailCliente || 'NO ENCONTRADO'}.`);
 
                     if (emailCliente) {
