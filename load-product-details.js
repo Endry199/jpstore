@@ -70,26 +70,24 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Definir símbolo inicial
-        let currencySymbol = '$';
-        if (currency === 'VES') currencySymbol = 'Bs.';
-        if (currency === 'COP') currencySymbol = 'COP$';
+        // 🎯 MODIFICADO: Símbolo para COP
+        const currencySymbol = (currency === 'VES') ? 'Bs.' : (currency === 'COP' ? 'COP$' : '$');
 
         data.paquetes.forEach(pkg => {
             const usdPrice = parseFloat(pkg.precio_usd || 0).toFixed(2);
             const vesPrice = parseFloat(pkg.precio_ves || 0).toFixed(2);
-            const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2);
-            const copPrice = pkg.precio_cop ? parseFloat(pkg.precio_cop).toFixed(2) : usdPrice;
+            const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
+            const copPrice = parseFloat(pkg.precio_cop || 0).toFixed(2); // 🎯 Aseguramos valor numérico
 
-            // Lógica para el precio visible inicial
             let displayPrice;
             if (currency === 'VES') {
                 displayPrice = vesPrice;
             } else if (currency === 'JPUSD') {
                 displayPrice = jpusdPrice;
             } else if (currency === 'COP') {
-                displayPrice = copPrice;
-            } else {
+                // Si el precio COP es 0.00, usamos el USD por defecto
+                displayPrice = (pkg.precio_cop && pkg.precio_cop > 0) ? copPrice : usdPrice;
+            } else { 
                 displayPrice = usdPrice;
             }
 
@@ -100,7 +98,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data-price-usd="${usdPrice}"
                     data-price-ves="${vesPrice}"
                     data-price-jpusd="${jpusdPrice}"
-                    data-price-cop="${copPrice}"
+                    data-price-cop="${copPrice}" 
                 >
                     <div class="package-name">${pkg.nombre_paquete}</div>
                     <div class="package-price">${currencySymbol} ${displayPrice}</div>
@@ -119,26 +117,30 @@ document.addEventListener('DOMContentLoaded', () => {
         const packageOptionsGrid = document.getElementById('package-options-grid');
         if (!packageOptionsGrid) return; 
         
-        let currencySymbol = '$';
-        if (currency === 'VES') currencySymbol = 'Bs.';
-        if (currency === 'COP') currencySymbol = 'COP$';
+        // 🎯 MODIFICADO: Símbolo dinámico incluyendo COP
+        const currencySymbol = (currency === 'VES') ? 'Bs.' : (currency === 'COP' ? 'COP$' : '$');
 
         const packageElements = packageOptionsGrid.querySelectorAll('.package-option');
         packageElements.forEach(element => {
             
-            let price;
+            let priceKeyDataset;
             if (currency === 'VES') {
-                price = element.dataset.priceVes;
+                priceKeyDataset = 'priceVes';
             } else if (currency === 'JPUSD') {
-                price = element.dataset.priceJpusd; 
+                priceKeyDataset = 'priceJpusd'; 
             } else if (currency === 'COP') {
-                // Si el dataset tiene priceCop lo usa, si no, usa el de respaldo (USD)
-                price = element.dataset.priceCop || element.dataset.priceUsd;
+                priceKeyDataset = 'priceCop';
             } else {
-                price = element.dataset.priceUsd;
+                priceKeyDataset = 'priceUsd';
             }
 
-            element.querySelector('.package-price').textContent = `${currencySymbol} ${parseFloat(price).toFixed(2)}`;
+            // Lógica de respaldo: si la moneda seleccionada (ej. COP) está en 0, mostrar USD
+            const priceVal = parseFloat(element.dataset[priceKeyDataset]);
+            const priceFallback = parseFloat(element.dataset.priceUsd);
+            
+            const finalPrice = (priceVal > 0) ? priceVal.toFixed(2) : priceFallback.toFixed(2);
+            
+            element.querySelector('.package-price').textContent = `${currencySymbol} ${finalPrice}`;
         });
     }
 
@@ -219,9 +221,12 @@ document.addEventListener('DOMContentLoaded', () => {
             if (productContainer) {
                 productContainer.innerHTML = '<h2 class="error-message">❌ Error al conectar con el servidor.</h2><p style="text-align:center;">Por favor, recarga la página o vuelve más tarde.</p>';
             }
+            const pageTitle = document.getElementById('page-title');
+            if (pageTitle) pageTitle.textContent = 'Error de Carga - JP STORE';
         }
     }
     
+    // 3. Manejo del envío del formulario
     if (rechargeForm) {
         rechargeForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -255,14 +260,14 @@ document.addEventListener('DOMContentLoaded', () => {
                 priceUSD: itemPriceUSD, 
                 priceVES: itemPriceVES, 
                 priceJPUSD: itemPriceJPUSD,
-                priceCOP: itemPriceCOP,
+                priceCOP: itemPriceCOP, 
                 requiresAssistance: currentProductData.require_id !== true 
             };
 
             if (window.addToCart) {
                 window.addToCart(cartItem);
             } else {
-                console.error("Función addToCart no encontrada.");
+                console.error("Función addToCart no encontrada. ¿Está script.js cargado?");
             }
 
             alert(`✅ ¡Tu recarga de ${packageName} para ${cartItem.game} se ha agregado al carrito!`);
