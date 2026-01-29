@@ -33,8 +33,6 @@ document.addEventListener('DOMContentLoaded', () => {
         
         // 1. Manejo de la selección de paquetes
         packageOptions.forEach(option => {
-            // Es buena práctica remover el listener antes de adjuntarlo si la función se llama 
-            // más de una vez por si el DOM no se limpia completamente.
             option.removeEventListener('click', handlePackageClick); 
             option.addEventListener('click', handlePackageClick);
         });
@@ -43,22 +41,18 @@ document.addEventListener('DOMContentLoaded', () => {
         if (packageOptions.length > 0) {
             let shouldSelectDefault = true;
             
-            // Revisar si el paquete previamente seleccionado existe todavía en el DOM
             if (selectedPackage && document.body.contains(selectedPackage)) {
-                // El paquete seleccionado existe, nos aseguramos de que esté resaltado.
                 packageOptions.forEach(opt => opt.classList.remove('selected'));
                 selectedPackage.classList.add('selected');
                 shouldSelectDefault = false;
             } 
             
-            // Si no hay paquete seleccionado (o el anterior se perdió/invalidó), seleccionamos el primero
             if (shouldSelectDefault) {
                 packageOptions[0].classList.add('selected');
                 selectedPackage = packageOptions[0];
             }
         }
     }
-
 
     // Función para renderizar el HTML de los paquetes
     function renderProductPackages(data, currency) {
@@ -69,32 +63,33 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
         
-        packageOptionsGrid.innerHTML = ''; // Limpiar el contenido de carga
+        packageOptionsGrid.innerHTML = ''; 
 
         if (!data.paquetes || data.paquetes.length === 0) {
             packageOptionsGrid.innerHTML = '<p class="empty-message">Aún no hay paquetes de recarga disponibles para este juego.</p>';
             return;
         }
 
-        const currencySymbol = (currency === 'VES') ? 'Bs.' : '$';
+        // Definir símbolo inicial
+        let currencySymbol = '$';
+        if (currency === 'VES') currencySymbol = 'Bs.';
+        if (currency === 'COP') currencySymbol = 'COP$';
 
         data.paquetes.forEach(pkg => {
-            // Asegurarse de que las propiedades existen y son números válidos
             const usdPrice = parseFloat(pkg.precio_usd || 0).toFixed(2);
             const vesPrice = parseFloat(pkg.precio_ves || 0).toFixed(2);
-            // 🎯 NUEVO: OBTENER PRECIO JPUSD
-            const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
+            const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2);
+            const copPrice = pkg.precio_cop ? parseFloat(pkg.precio_cop).toFixed(2) : usdPrice;
 
-            // 🎯 LÓGICA MODIFICADA PARA SELECCIONAR EL PRECIO A MOSTRAR
+            // Lógica para el precio visible inicial
             let displayPrice;
             if (currency === 'VES') {
                 displayPrice = vesPrice;
             } else if (currency === 'JPUSD') {
                 displayPrice = jpusdPrice;
             } else if (currency === 'COP') {
-                // Para COP, si no hay precio específico, usamos USD
-                displayPrice = pkg.precio_cop ? parseFloat(pkg.precio_cop).toFixed(2) : usdPrice;
-            } else { // Por defecto, USD
+                displayPrice = copPrice;
+            } else {
                 displayPrice = usdPrice;
             }
 
@@ -104,8 +99,8 @@ document.addEventListener('DOMContentLoaded', () => {
                     data-package-name="${pkg.nombre_paquete}"
                     data-price-usd="${usdPrice}"
                     data-price-ves="${vesPrice}"
-                    data-price-jpusd="${jpusdPrice}" // 👈 NUEVO: Agregar el precio JPUSD al dataset
-                    ${pkg.precio_cop ? `data-price-cop="${parseFloat(pkg.precio_cop).toFixed(2)}"` : ''}
+                    data-price-jpusd="${jpusdPrice}"
+                    data-price-cop="${copPrice}"
                 >
                     <div class="package-name">${pkg.nombre_paquete}</div>
                     <div class="package-price">${currencySymbol} ${displayPrice}</div>
@@ -114,7 +109,6 @@ document.addEventListener('DOMContentLoaded', () => {
             packageOptionsGrid.insertAdjacentHTML('beforeend', packageHtml);
         });
         
-        // ¡¡¡CLAVE!!! Adjuntar eventos después de renderizar
         attachPackageEventListeners();
     }
     
@@ -125,30 +119,28 @@ document.addEventListener('DOMContentLoaded', () => {
         const packageOptionsGrid = document.getElementById('package-options-grid');
         if (!packageOptionsGrid) return; 
         
-        const currencySymbol = (currency === 'VES') ? 'Bs.' : '$';
+        let currencySymbol = '$';
+        if (currency === 'VES') currencySymbol = 'Bs.';
+        if (currency === 'COP') currencySymbol = 'COP$';
 
-        // Recorrer los paquetes y actualizar el precio
         const packageElements = packageOptionsGrid.querySelectorAll('.package-option');
         packageElements.forEach(element => {
             
-            // 🎯 LÓGICA MODIFICADA: Seleccionar la clave del dataset según la moneda
-            let priceKeyDataset;
+            let price;
             if (currency === 'VES') {
-                priceKeyDataset = 'priceVes';
+                price = element.dataset.priceVes;
             } else if (currency === 'JPUSD') {
-                priceKeyDataset = 'priceJpusd'; 
+                price = element.dataset.priceJpusd; 
             } else if (currency === 'COP') {
-                priceKeyDataset = 'priceCop';
+                // Si el dataset tiene priceCop lo usa, si no, usa el de respaldo (USD)
+                price = element.dataset.priceCop || element.dataset.priceUsd;
             } else {
-                priceKeyDataset = 'priceUsd';
+                price = element.dataset.priceUsd;
             }
 
-            // data-price-jpusd se mapea a element.dataset.priceJpusd (camelCase)
-            const price = parseFloat(element.dataset[priceKeyDataset] || element.dataset.priceUsd).toFixed(2);
-            element.querySelector('.package-price').textContent = `${currencySymbol} ${price}`;
+            element.querySelector('.package-price').textContent = `${currencySymbol} ${parseFloat(price).toFixed(2)}`;
         });
     }
-
 
     // Función principal para cargar los detalles del producto
     async function loadProductDetails() {
@@ -163,7 +155,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
 
         try {
-            // Llama a tu Netlify Function para obtener el producto
             const response = await fetch(`/.netlify/functions/get-product-details?slug=${slug}`);
             
             if (!response.ok) {
@@ -173,11 +164,9 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const data = await response.json();
             
-            // 2. Cargar datos en la UI (FIX)
             if (data) {
-                currentProductData = data; // Almacenar los datos
+                currentProductData = data; 
                 
-                // INICIO DE COMPROBACIONES DEFENSIVAS
                 const pageTitle = document.getElementById('page-title');
                 if (pageTitle) pageTitle.textContent = `${data.nombre} - JP STORE`;
 
@@ -193,35 +182,28 @@ document.addEventListener('DOMContentLoaded', () => {
                     bannerImage.alt = data.nombre;
                 }
                 
-                // 🎯 NUEVA LÓGICA: MOSTRAR CAMPO ID O MENSAJE DE WHATSAPP
                 const playerIdInputGroup = document.getElementById('player-id-input-group');
                 const whatsappMessage = document.getElementById('whatsapp-info-message');
                 const stepOneTitle = document.getElementById('step-one-title');
 
                 if (playerIdInputGroup && whatsappMessage && stepOneTitle) {
                     if (data.require_id === true) {
-                        // Requiere ID
                         playerIdInputGroup.style.display = 'block'; 
                         whatsappMessage.style.display = 'none';
                         stepOneTitle.textContent = 'Paso 1: Ingresa tu ID';
                     } else {
-                        // NO requiere ID, muestra el mensaje de WhatsApp
                         playerIdInputGroup.style.display = 'none';
                         whatsappMessage.style.display = 'block';
                         stepOneTitle.textContent = 'Paso 1: Asistencia Requerida';
-                        // Aseguramos que el campo ID esté vacío para no enviar datos innecesarios
                         const playerIdInput = document.getElementById('player-id-input');
                         if(playerIdInput) playerIdInput.value = '';
                     }
                 }
-                // FIN DE COMPROBACIONES DEFENSIVAS
                 
                 const initialCurrency = localStorage.getItem('selectedCurrency') || 'VES';
                 
-                // Renderizar los paquetes
                 renderProductPackages(data, initialCurrency); 
 
-                // Adjuntar Listener al cambio de moneda (script.js debe disparar este evento)
                 window.addEventListener('currencyChanged', (event) => {
                     updatePackagesUI(event.detail.currency);
                 });
@@ -237,12 +219,9 @@ document.addEventListener('DOMContentLoaded', () => {
             if (productContainer) {
                 productContainer.innerHTML = '<h2 class="error-message">❌ Error al conectar con el servidor.</h2><p style="text-align:center;">Por favor, recarga la página o vuelve más tarde.</p>';
             }
-            const pageTitle = document.getElementById('page-title');
-            if (pageTitle) pageTitle.textContent = 'Error de Carga - JP STORE';
         }
     }
     
-    // 3. Manejo del envío del formulario (ESTO DEBE ESTAR AQUÍ PARA EJECUTARSE SOLO UNA VEZ)
     if (rechargeForm) {
         rechargeForm.addEventListener('submit', (e) => {
             e.preventDefault();
@@ -253,10 +232,8 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const playerIdInput = document.getElementById('player-id-input');
-            // Si el campo ID no es requerido, playerId será una cadena vacía ('') 
             const playerId = playerIdInput ? playerIdInput.value.trim() : ''; 
 
-            // 🎯 LÓGICA DE VALIDACIÓN CONDICIONAL
             if (currentProductData && currentProductData.require_id === true) {
                 if (!playerId) {
                     alert('Por favor, ingresa tu ID de Jugador. Este campo es obligatorio para este producto.');
@@ -264,48 +241,31 @@ document.addEventListener('DOMContentLoaded', () => {
                 }
             }
             
-            // Obtener datos del paquete seleccionado
             const packageName = selectedPackage.dataset.packageName;
-            // Usamos los strings del dataset, que ya vienen con 2 decimales
             const itemPriceUSD = selectedPackage.dataset.priceUsd; 
             const itemPriceVES = selectedPackage.dataset.priceVes; 
-            // 👈 NUEVO: OBTENER EL PRECIO JPUSD DEL DATASET DEL ELEMENTO SELECCIONADO
             const itemPriceJPUSD = selectedPackage.dataset.priceJpusd; 
-            const itemPriceCOP = selectedPackage.dataset.priceCop || itemPriceUSD;
+            const itemPriceCOP = selectedPackage.dataset.priceCop;
             
-            // =============================================================
-            // === MODIFICACIÓN CLAVE: AÑADIR AL CARRITO Y MOSTRAR ALERTA ===
-            // =============================================================
-            
-            // 1. Construir objeto de Ítem de Carrito con ID único
             const cartItem = {
-                id: Date.now(), // ID único basado en el timestamp
+                id: Date.now(), 
                 game: currentProductData ? currentProductData.nombre : 'Juego Desconocido',
-                // Enviamos el ID, que puede ser vacío ('') si no se requiere, o el valor ingresado
                 playerId: playerId, 
                 packageName: packageName,
-                // Enviamos los precios como strings (tal como están en el dataset)
                 priceUSD: itemPriceUSD, 
                 priceVES: itemPriceVES, 
-                priceJPUSD: itemPriceJPUSD, // 👈 NUEVO: Añadir precio JPUSD
-                priceCOP: itemPriceCOP, // 👈 NUEVO: Añadir precio COP
+                priceJPUSD: itemPriceJPUSD,
+                priceCOP: itemPriceCOP,
                 requiresAssistance: currentProductData.require_id !== true 
             };
 
-            // 2. Llamar a la función global para añadir al carrito (definida en script.js)
             if (window.addToCart) {
                 window.addToCart(cartItem);
             } else {
-                console.error("Función addToCart no encontrada. ¿Está script.js cargado?");
+                console.error("Función addToCart no encontrada.");
             }
 
-            // 3. MOSTRAR MENSAJE de CONFIRMACIÓN (ALERTA DE CONSOLA)
             alert(`✅ ¡Tu recarga de ${packageName} para ${cartItem.game} se ha agregado al carrito!`);
-            
-            // Opcional: limpiar el campo de ID después de añadir
-            // if(playerIdInput) playerIdInput.value = ''; // <--- COMENTADA PARA MANTENER EL ID
-            
-            // =============================================================
         });
     }
 
