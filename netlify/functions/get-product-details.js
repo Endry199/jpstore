@@ -43,7 +43,8 @@ exports.handler = async function(event, context) {
                     nombre_paquete, 
                     precio_usd, 
                     precio_ves, 
-                    precio_usdm, 
+                    precio_usdm,
+                    precio_cop, 
                     orden
                 )
             `) // 👈 CAMBIO CLAVE: Se agregó 'precio_usdm'
