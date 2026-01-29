@@ -120,16 +120,11 @@ exports.handler = async (event, context) => {
                     console.warn(`WARN: Email en transacción es nulo y google_id es nulo. No se intentó búsqueda secundaria.`);
                 }
                 
-                // 🔍 DIAGNÓSTICO DETALLADO DEL PROBLEMA
-                console.log(`🔍 LOG DIAGNÓSTICO: game value from DB = "${game}"`);
-                console.log(`🔍 LOG DIAGNÓSTICO: game type = ${typeof game}`);
-                console.log(`🔍 LOG DIAGNÓSTICO: Comparing with 'Recarga de Saldo'`);
-                console.log(`🔍 LOG DIAGNÓSTICO: game === 'Recarga de Saldo' = ${game === 'Recarga de Saldo'}`);
-                console.log(`🔍 LOG DIAGNÓSTICO: game.trim() === 'Recarga de Saldo' = ${game ? game.trim() === 'Recarga de Saldo' : 'game is null/undefined'}`);
-                
-                // DETECCIÓN MEJORADA DE RECARGA DE SALDO
-                const IS_WALLET_RECHARGE = game && game.trim() === 'Recarga de Saldo';
-                console.log(`🔍 LOG DIAGNÓSTICO: IS_WALLET_RECHARGE = ${IS_WALLET_RECHARGE}`);
+                // 🔍 DETECCIÓN MEJORADA DE RECARGA DE SALDO
+                // Busca "Recarga de Saldo" en cualquier parte del string
+                const IS_WALLET_RECHARGE = game && game.includes('Recarga de Saldo');
+                console.log(`LOG: DIAGNÓSTICO: game = "${game}"`);
+                console.log(`LOG: DIAGNÓSTICO: IS_WALLET_RECHARGE = ${IS_WALLET_RECHARGE} (game.includes('Recarga de Saldo'))`);
 
                 const amountInTransactionCurrency = parseFloat(finalPrice);
                 let amountToInject = amountInTransactionCurrency;
@@ -144,7 +139,7 @@ exports.handler = async (event, context) => {
                 console.log(`LOG: ⚡ PROCESANDO - Estado actual: ${currentStatus}, Es recarga: ${IS_WALLET_RECHARGE}`);
                 
                 if (IS_WALLET_RECHARGE) { 
-                    console.log(`LOG: 🎯 INICIANDO PROCESO DE RECARGA DE SALDO para Google ID: ${google_id}`);
+                    console.log(`LOG: 🎯 DETECTADA RECARGA DE SALDO - Iniciando proceso para Google ID: ${google_id}`);
                     
                     // PASO 3.1: LÓGICA CONDICIONAL DE CONVERSIÓN
                     if (currency === 'VES' || currency === 'BS') { 
@@ -163,7 +158,7 @@ exports.handler = async (event, context) => {
                         updateDBSuccess = false;
                     } else {
                         // 4. INYECTAR SALDO AL CLIENTE (Usando la función RPC)
-                        console.log(`LOG: 💰 INYECTANDO SALDO - $${amountToInject.toFixed(2)} a 'user_id' ${google_id}`);
+                        console.log(`LOG: 💰 INYECTANDO SALDO - $${amountToInject.toFixed(2)} USD a 'user_id' ${google_id}`);
                         
                         try {
                             const { error: balanceUpdateError } = await supabase
@@ -212,8 +207,8 @@ exports.handler = async (event, context) => {
                         .update({ 
                             status: NEW_STATUS
                         })
-                        .eq('id_transaccion', transactionId);
-                        // .in('status', ['pendiente', 'CONFIRMADO']); // Eliminado para debug
+                        .eq('id_transaccion', transactionId)
+                        .in('status', ['pendiente', 'CONFIRMADO']); 
                     
                     if (updateError) {
                         console.error(`ERROR DB: Fallo al actualizar el estado a ${NEW_STATUS}.`, updateError.message);

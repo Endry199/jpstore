@@ -331,6 +331,11 @@ exports.handler = async function(event, context) {
 
         const firstItem = cartItems[0] || {};
         
+        // 🔍 DETECCIÓN MEJORADA: Buscar "Recarga de Saldo" en cualquier parte del string
+        const isGameWalletRecharge = firstItem.game && firstItem.game.includes('Recarga de Saldo');
+        console.log(`[LOG handler] DIAGNÓSTICO: firstItem.game = "${firstItem.game}"`);
+        console.log(`[LOG handler] DIAGNÓSTICO: isGameWalletRecharge = ${isGameWalletRecharge}`);
+        
         const transactionToInsert = {
             id_transaccion: id_transaccion_generado,
             finalPrice: parseFloat(finalPrice),
@@ -380,9 +385,11 @@ exports.handler = async function(event, context) {
     console.log(`[LOG handler] Generating Telegram notification...`);
     
     const firstItem = cartItems[0] || {};
-    const isWalletRecharge = cartItems.length === 1 && firstItem.game === 'Recarga de Saldo';
     
-    console.log(`[LOG handler] isWalletRecharge: ${isWalletRecharge}`);
+    // 🔍 DETECCIÓN MEJORADA PARA TELEGRAM TAMBIÉN
+    const isWalletRecharge = cartItems.length === 1 && firstItem.game && firstItem.game.includes('Recarga de Saldo');
+    
+    console.log(`[LOG handler] isWalletRecharge: ${isWalletRecharge} (game: "${firstItem.game}")`);
     console.log(`[LOG handler] GLOBAL currency: ${currency}`);
     console.log(`[LOG handler] GLOBAL finalPrice: ${finalPrice}`);
 
@@ -611,7 +618,8 @@ exports.handler = async function(event, context) {
                         <span style="color: #00ff00; font-size: 12px;">• Vinculación: ${item.codmVinculation || 'N/A'}</span>
                     </div>
                 `;
-            } else if (game === 'Recarga de Saldo' && item.google_id) {
+            } else if (game.includes('Recarga de Saldo') && item.google_id) {
+                // 🔍 CORRECCIÓN AQUÍ TAMBIÉN
                 playerInfoEmail = `
                     <div style="margin-top: 5px;">
                         <span style="color: #00ff00; font-size: 12px;">• ID Google: ${item.google_id}</span><br>
