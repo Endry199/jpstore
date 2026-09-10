@@ -29,7 +29,9 @@ exports.handler = async function(event, context) {
     const supabase = createClient(supabaseUrl, supabaseAnonKey);
 
     try {
-        // Consulta limpia a Supabase:
+        // ⚠️ IMPORTANTE:
+        // - De PRODUCTOS: solo columnas que existen ahí (NO recargas_america_id)
+        // - De PAQUETES: precios + recargas_america_id (esa sí existe aquí)
         const { data: producto, error } = await supabase
             .from('productos')
             .select(`
@@ -40,14 +42,14 @@ exports.handler = async function(event, context) {
                 banner_url,
                 require_id,
                 es_free_fire,
-                recargas_america_id,
                 paquetes (
                     nombre_paquete, 
                     precio_usd, 
                     precio_ves, 
                     precio_usdm,
                     precio_cop, 
-                    orden
+                    orden,
+                    recargas_america_id
                 )
             `)
             .eq('slug', slug)
