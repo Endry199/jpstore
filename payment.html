@@ -1196,10 +1196,12 @@
                         if (window.refreshWalletBalance) {
                             window.refreshWalletBalance();
                         }
-                        alert(`❌ No se pudo procesar tu recarga de Free Fire.\n\nMotivo: ${apiError}\n\n✅ Tu saldo ha sido reembolsado automáticamente a tu Wallet.`);
+                        // ✅ MENSAJE GENÉRICO AL CLIENTE (No expone el motivo real)
+                        alert(`⚠️ Lo sentimos, el servicio de recargas de Free Fire está temporalmente sin stock.\n\n✅ Tu saldo ha sido reembolsado automáticamente a tu Wallet.\n\nPor favor, intenta de nuevo en unos minutos.`);
                     } else {
-                        alert(`❌ No se pudo procesar tu recarga de Free Fire.\n\nMotivo: ${apiError}\n\n⚠️ ERROR CRÍTICO: No se pudo reembolsar automáticamente. Contacta a soporte inmediatamente con tu correo: ${emailInput.value.trim()}`);
-                        console.error('[FF-AUTO] Fallo el refund también.');
+                        // ✅ MENSAJE GENÉRICO AL CLIENTE (No expone el motivo real)
+                        alert(`⚠️ Lo sentimos, el servicio de recargas de Free Fire está temporalmente sin stock.\n\n⚠️ No pudimos completar el reembolso automático. Por favor, contacta a soporte por WhatsApp para que te devuelvan tu saldo.\n\nTu correo: ${emailInput.value.trim()}`);
+                        console.error('[FF-AUTO] Fallo el refund también. Motivo original:', apiError);
                     }
 
                     finalizeBtn.disabled = false;
@@ -1248,10 +1250,9 @@
                     whatsappMessageContainer.style.display = 'none';
                     successMessageDisplay.style.display = 'block';
 
-                    // Si hubo algunos fallos parciales, avisamos antes de redirigir
+                    // ✅ MENSAJE GENÉRICO AL CLIENTE (algunos items fallaron)
                     if (someFailed) {
-                        const failedItems = apiResults.filter(r => !r.success).map(r => r.item.packageName).join(', ');
-                        alert(`⚠️ Algunas recargas se procesaron correctamente, pero estas fallaron: ${failedItems}.\n\nEl saldo de los items fallidos NO ha sido reembolsado automáticamente. Por favor, contacta a soporte con tu correo.`);
+                        alert(`⚠️ Algunas de tus recargas no pudieron procesarse por falta de stock temporal.\n\nPor favor, contacta a soporte por WhatsApp con tu correo: ${emailInput.value.trim()} para gestionar el reembolso de los items no procesados.`);
                     }
 
                     cleanUpPaymentSession();
@@ -1290,9 +1291,11 @@
                         if (window.refreshWalletBalance) {
                             window.refreshWalletBalance();
                         }
-                        alert(`❌ Ocurrió un error inesperado. Tu saldo ha sido reembolsado.`);
+                        // ✅ MENSAJE GENÉRICO
+                        alert(`⚠️ Lo sentimos, el servicio de recargas de Free Fire está temporalmente sin stock.\n\n✅ Tu saldo ha sido reembolsado automáticamente a tu Wallet.`);
                     } catch (refundErr) {
-                        alert(`❌ Error crítico. Contacta a soporte con tu correo: ${emailInput.value.trim()}`);
+                        // ✅ MENSAJE GENÉRICO
+                        alert(`⚠️ Lo sentimos, el servicio de recargas de Free Fire está temporalmente sin stock.\n\n⚠️ No pudimos completar el reembolso automático. Por favor, contacta a soporte con tu correo: ${emailInput.value.trim()}`);
                         console.error('[FF-AUTO] Fallo el refund de emergencia:', refundErr);
                     }
                 } else {
