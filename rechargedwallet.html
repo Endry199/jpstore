@@ -86,7 +86,7 @@
         /* Columna de Información del Producto (Izquierda) */
         .product-info {
             flex: 1 1 55%;
-            min-width: 300px; /* Se mantiene para desktop/tablet */
+            min-width: 300px;
         }
 
         /* Imagen/Banner del Producto */
@@ -111,7 +111,7 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 20px var(--shadow-dark);
-            min-width: 300px; /* Se mantiene para desktop/tablet */
+            min-width: 300px;
         }
 
         .section-title {
@@ -122,7 +122,6 @@
             font-weight: 700;
         }
         
-        /* ESTILO PARA EL MENSAJE DE WHATSAPP (Aunque no se usa aquí, se mantiene por similitud) */
         .whatsapp-message-box p {
             margin: 0;
             color: #d1d1d1;
@@ -132,7 +131,6 @@
             color: var(--accent-green);
         }
 
-        /* Estilos del Formulario (Inputs/Botones) */
         .form-group label {
             display: block;
             margin-bottom: 8px;
@@ -157,7 +155,6 @@
             outline: none;
         }
 
-        /* Estilos del botón de compra */
         .recharge-button {
             width: 100%;
             padding: 15px;
@@ -176,7 +173,6 @@
             opacity: 0.9;
         }
         
-        /* Mensaje de advertencia bajo el botón */
         .warning-message {
             font-size: 0.85em;
             color: var(--secondary-text);
@@ -188,14 +184,81 @@
             color: var(--accent-green);
             text-decoration: none;
         }
-        
-        /* ======================================================= */
-        /* === ESTILOS ESPECÍFICOS DE HEADER Y PÁGINA DE RECARGA === */
-        /* ======================================================= */
-        
-        /* --- Estilos del Contenedor de Billetera en el Header --- */
 
-        /* El botón '+' de recarga */
+        /* ==================================== */
+        /* 🆕 NUEVO: CAMPO DE MONTO PERSONALIZADO */
+        /* ==================================== */
+        .custom-amount-group {
+            margin-top: 20px;
+            padding: 15px;
+            background-color: var(--input-bg);
+            border: 2px dashed var(--border-color);
+            border-radius: 8px;
+            transition: all 0.3s ease;
+        }
+
+        .custom-amount-group.active {
+            border-color: var(--accent-green);
+            border-style: solid;
+            background-color: rgba(40, 167, 69, 0.05);
+        }
+
+        .custom-amount-group label {
+            display: block;
+            margin-bottom: 10px;
+            font-weight: 600;
+            color: var(--secondary-text);
+            font-size: 0.95em;
+        }
+
+        .custom-amount-group .input-wrapper {
+            position: relative;
+            display: flex;
+            align-items: center;
+        }
+
+        .custom-amount-group .currency-symbol-input {
+            position: absolute;
+            left: 15px;
+            color: var(--accent-green);
+            font-weight: bold;
+            font-size: 1.1em;
+            pointer-events: none;
+        }
+
+        #custom-amount-input {
+            width: 100%;
+            padding: 12px 12px 12px 35px;
+            border: 1px solid var(--border-color);
+            border-radius: 8px;
+            background-color: var(--card-bg);
+            color: var(--text-color);
+            font-size: 1.1em;
+            font-weight: 600;
+            box-sizing: border-box;
+            transition: border-color 0.3s;
+        }
+
+        #custom-amount-input:focus {
+            border-color: var(--accent-green);
+            outline: none;
+        }
+
+        #custom-amount-input::placeholder {
+            color: var(--secondary-text);
+            font-weight: normal;
+            font-size: 0.9em;
+        }
+
+        .custom-amount-hint {
+            display: block;
+            margin-top: 8px;
+            font-size: 0.8em;
+            color: var(--secondary-text);
+            font-style: italic;
+        }
+        /* ==================================== */
+
         .recharge-btn {
             display: flex;
             align-items: center;
@@ -217,23 +280,17 @@
             background-color: var(--hover-blue);
         }
 
-        /* --- Ajustes de Layout para la Página de Recarga (rechargedwallet.html) --- */
-
-        /* Ajustamos el contenedor izquierdo para que se vea bien como una tarjeta */
         .product-main .product-info {
             background-color: var(--card-bg);
             padding: 20px; 
             border-radius: 12px;
-            /* Estos estilos sobrescriben la definición base de .product-info para este caso */
         }
         
-        /* Sobrescribir el tamaño del título de la billetera */
         .product-main .product-info .product-title {
             font-size: 1.8em; 
             color: var(--primary-blue);
         }
 
-        /* Estilo del botón de recarga (para cuando está deshabilitado al inicio) */
         .recharge-button:disabled {
             background: var(--border-color);
             cursor: not-allowed;
@@ -241,7 +298,6 @@
             color: var(--secondary-text);
         }
 
-        /* Mensaje de carga */
         #packages-loading {
             text-align: center;
             grid-column: 1 / -1; 
@@ -249,7 +305,6 @@
             color: var(--secondary-text);
         }
         
-        /* AJUSTES RESPONSIVOS (para móvil) */
         @media (max-width: 850px) {
             .product-main {
                 flex-direction: column; 
@@ -272,7 +327,6 @@
                 grid-template-columns: repeat(auto-fit, minmax(100px, 1fr));
             }
             
-             /* Ajustes Responsivos para móviles pequeños (del CSS original de product.html) */
             @media (max-width: 600px) {
                 .package-options {
                     grid-template-columns: repeat(auto-fit, minmax(120px, 1fr)); 
@@ -392,7 +446,27 @@
                     
                     <div class="package-options" id="recharge-package-options-grid"> 
                         <p id="packages-loading">Cargando opciones...</p>
+                    </div>
+
+                    <!-- 🆕 NUEVO: Campo de Monto Personalizado -->
+                    <div class="custom-amount-group" id="custom-amount-group">
+                        <label for="custom-amount-input">
+                            <i class="fas fa-edit"></i> Monto Personalizado
+                        </label>
+                        <div class="input-wrapper">
+                            <span class="currency-symbol-input">$</span>
+                            <input 
+                                type="number" 
+                                id="custom-amount-input" 
+                                name="customAmount" 
+                                placeholder="Ej: 1.04, 1.40, 25.50"
+                                min="1"
+                                step="0.01"
+                                autocomplete="off"
+                            >
                         </div>
+                        <small class="custom-amount-hint">Mínimo $1.00 — Puedes usar decimales (ej: 1.04)</small>
+                    </div>
                     
                     <button type="submit" class="recharge-button" id="select-package-btn" disabled>
                         Continuar al Pago
@@ -413,9 +487,6 @@
     <script src="script.js"></script>
     
     <script>
-        // Esto asegura que la lógica de carga de paquetes (load-recharge-packages.js) 
-        // y la visualización del header (script.js) inicien siempre en VES, 
-        // sobrescribiendo la última moneda seleccionada si es necesario.
         localStorage.setItem('selectedCurrency', 'VES');
         console.log('Moneda por defecto forzada a VES para la recarga de billetera.');
     </script>
