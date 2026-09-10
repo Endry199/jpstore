@@ -70,6 +70,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const vesPrice = parseFloat(pkg.precio_ves || 0).toFixed(2);
             const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
             const copPrice = parseFloat(pkg.precio_cop || 0).toFixed(2);
+            // 🆕 NUEVO: Guardamos el ID de Recargas América del paquete
+            const recargasAmericaId = pkg.recargas_america_id || '';
 
             let displayPrice;
             if (currency === 'VES') {
@@ -90,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data-price-ves="${vesPrice}"
                     data-price-jpusd="${jpusdPrice}"
                     data-price-cop="${copPrice}" 
+                    data-recargas-america-id="${recargasAmericaId}"
                 >
                     <div class="package-name">${pkg.nombre_paquete}</div>
                     <div class="package-price">${currencySymbol} ${displayPrice}</div>
@@ -265,9 +268,14 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemPriceVES = selectedPackage.dataset.priceVes; 
             const itemPriceJPUSD = selectedPackage.dataset.priceJpusd; 
             const itemPriceCOP = selectedPackage.dataset.priceCop;
+            // 🆕 NUEVO: Leer el ID de Recargas América DEL PAQUETE seleccionado
+            const recargasAmericaId = selectedPackage.dataset.recargasAmericaId;
             
-            // 🆕 NUEVO: Detectar si es Free Fire con recarga automática
-            const isFreeFireAuto = currentProductData && currentProductData.es_free_fire === true && currentProductData.recargas_america_id;
+            // 🆕 Detectar si es Free Fire con recarga automática (necesita ambos: es_free_fire y el ID del paquete)
+            const isFreeFireAuto = currentProductData 
+                && currentProductData.es_free_fire === true 
+                && recargasAmericaId 
+                && recargasAmericaId !== '';
             
             const cartItem = {
                 id: Date.now(), 
@@ -279,9 +287,9 @@ document.addEventListener('DOMContentLoaded', () => {
                 priceJPUSD: itemPriceJPUSD,
                 priceCOP: itemPriceCOP, 
                 requiresAssistance: currentProductData.require_id !== true,
-                // 🆕 NUEVO: Datos para la API de Recargas América
+                // 🆕 Datos para la API de Recargas América (por paquete)
                 isFreeFireAutoRecharge: isFreeFireAuto,
-                recargasAmericaProductId: isFreeFireAuto ? currentProductData.recargas_america_id : null
+                recargasAmericaProductId: isFreeFireAuto ? parseInt(recargasAmericaId, 10) : null
             };
 
             if (window.addToCart) {
