@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
         // 🟢 PASO 3: Guardar el array de transacción en localStorage
         localStorage.setItem('transactionDetails', JSON.stringify([transactionItem]));
 
-        // 🟢 PASO 4: Redirigir inmediatamente a payment.html para procesar el pago.
+        // 🟢 PASO 4: Redirigir inmediatamente a payment.html para procesar el pago.aaaa
         window.location.href = 'payment.html';
     });
 });
