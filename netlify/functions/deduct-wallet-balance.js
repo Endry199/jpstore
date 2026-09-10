@@ -21,7 +21,7 @@ if (supabaseUrl && supabaseServiceKey) {
 
 exports.handler = async function(event, context) {
     
-    // Verificar si la configuración de Supabase está disponible
+    // Verificar si la configuración de Supabase está disponibleaaaaa
     if (!supabase) {
         console.error("Faltan variables de entorno de Supabase.");
         return { 
