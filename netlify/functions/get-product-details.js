@@ -39,6 +39,8 @@ exports.handler = async function(event, context) {
                 descripcion,
                 banner_url,
                 require_id,
+                es_free_fire,
+                recargas_america_id,
                 paquetes (
                     nombre_paquete, 
                     precio_usd, 
@@ -47,17 +49,15 @@ exports.handler = async function(event, context) {
                     precio_cop, 
                     orden
                 )
-            `) // 👈 CAMBIO CLAVE: Se agregó 'precio_usdm'
+            `)
             .eq('slug', slug)
             .maybeSingle(); 
             
-        // Manejar errores de consulta de Supabase
         if (error) {
             console.error("Error de Supabase al obtener producto:", error);
             throw new Error(error.message || "Error desconocido en la consulta a Supabase."); 
         }
 
-        // Manejar el caso de producto no encontrado
         if (!producto) {
             return {
                 statusCode: 404,
@@ -65,12 +65,10 @@ exports.handler = async function(event, context) {
             };
         }
 
-        // Ordenar los paquetes
         if (producto.paquetes && producto.paquetes.length > 0) {
             producto.paquetes.sort((a, b) => a.orden - b.orden);
         }
 
-        // Devolver los datos
         return {
             statusCode: 200,
             headers: { "Content-Type": "application/json" },
@@ -78,7 +76,6 @@ exports.handler = async function(event, context) {
         };
 
     } catch (error) {
-        // Devolvemos el error de la consulta de Supabase al frontend
         console.error("Error FATAL en la función get-product-details:", error.message);
         return {
             statusCode: 500,

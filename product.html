@@ -14,6 +14,11 @@
             overflow-x: hidden; 
         }
 
+        /* 🆕 NUEVO: Ocultar el selector de moneda cuando el producto lo requiera (Free Fire) */
+        body.hide-currency-selector .custom-currency-selector {
+            display: none !important;
+        }
+
         /* ==================================== */
         /* === ESTILOS PARA LA SELECCIÓN DE PAQUETES EN product.html === */
         /* ==================================== */
@@ -107,7 +112,7 @@
         /* Columna de Información del Producto (Izquierda) */
         .product-info {
             flex: 1 1 55%;
-            min-width: 300px; /* Se mantiene para desktop/tablet */
+            min-width: 300px;
         }
 
         /* Imagen/Banner del Producto */
@@ -132,7 +137,7 @@
             padding: 30px;
             border-radius: 12px;
             box-shadow: 0 4px 20px var(--shadow-dark);
-            min-width: 300px; /* Se mantiene para desktop/tablet */
+            min-width: 300px;
         }
 
         .section-title {
@@ -171,7 +176,7 @@
             color: var(--text-color);
             font-size: 1em;
             transition: border-color 0.3s;
-            box-sizing: border-box; /* **¡Asegura que el padding no afecte el ancho total!** */
+            box-sizing: border-box;
         }
         
         #player-id-input:focus {
@@ -199,7 +204,7 @@
             border-radius: 8px;
             cursor: pointer;
             transition: opacity 0.3s;
-            box-sizing: border-box; /* **¡Asegura que el padding no afecte el ancho total!** */
+            box-sizing: border-box;
         }
 
         .recharge-button:hover {
@@ -225,20 +230,17 @@
             .product-main {
                 flex-direction: column; 
                 margin-top: 20px;
-                /* REDUCCIÓN DEL PADDING EN MÓVILES para dar más espacio al contenido */
                 padding: 0 10px; 
             }
 
             .product-info {
                 order: 1;
-                /* Eliminamos el min-width en móvil para que se ajuste a 100% del espacio disponible */
                 min-width: initial; 
             }
 
             .product-form-container {
                 order: 2;
-                padding: 20px 15px; /* Ajuste un poco el padding interno del formulario */
-                 /* Eliminamos el min-width en móvil */
+                padding: 20px 15px;
                 min-width: initial; 
             }
             

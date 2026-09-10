@@ -3,7 +3,7 @@
 document.addEventListener('DOMContentLoaded', () => {
     // Estas variables son accesibles por todas las funciones anidadas (closure)
     let selectedPackage = null;
-    let currentProductData = null; // Variable para almacenar los datos del producto actual
+    let currentProductData = null;
     const productContainer = document.getElementById('product-container');
     const rechargeForm = document.getElementById('recharge-form');
 
@@ -13,31 +13,25 @@ document.addEventListener('DOMContentLoaded', () => {
         return params.get('slug');
     }
 
-    // Función que se encarga del evento de clic en un paquete
     function handlePackageClick() {
         const packageOptions = document.querySelectorAll('.package-option');
         
-        // 1. Deseleccionar todos
         packageOptions.forEach(opt => opt.classList.remove('selected'));
         
-        // 2. Seleccionar el actual (usando 'this' que es el elemento clickeado)
         this.classList.add('selected');
-        selectedPackage = this; // Actualiza la variable global
+        selectedPackage = this;
         
         console.log('Paquete seleccionado:', selectedPackage.dataset.packageName);
     }
     
-    // Función para adjuntar eventos de clic a los paquetes y manejar la selección inicial
     function attachPackageEventListeners() {
         const packageOptions = document.querySelectorAll('.package-option');
         
-        // 1. Manejo de la selección de paquetes
         packageOptions.forEach(option => {
             option.removeEventListener('click', handlePackageClick); 
             option.addEventListener('click', handlePackageClick);
         });
         
-        // 2. Seleccionar el primer paquete por defecto al cargar/renderizar
         if (packageOptions.length > 0) {
             let shouldSelectDefault = true;
             
@@ -54,7 +48,6 @@ document.addEventListener('DOMContentLoaded', () => {
         }
     }
 
-    // Función para renderizar el HTML de los paquetes
     function renderProductPackages(data, currency) {
         const packageOptionsGrid = document.getElementById('package-options-grid');
         
@@ -70,7 +63,6 @@ document.addEventListener('DOMContentLoaded', () => {
             return;
         }
 
-        // Símbolo para COP y otras monedas
         const currencySymbol = (currency === 'VES') ? 'Bs.' : (currency === 'COP' ? 'COP$' : '$');
 
         data.paquetes.forEach(pkg => {
@@ -85,7 +77,6 @@ document.addEventListener('DOMContentLoaded', () => {
             } else if (currency === 'JPUSD') {
                 displayPrice = jpusdPrice;
             } else if (currency === 'COP') {
-                // ✅ MODIFICADO: Muestra copPrice directamente (aunque sea 0.00)
                 displayPrice = copPrice;
             } else { 
                 displayPrice = usdPrice;
@@ -110,7 +101,6 @@ document.addEventListener('DOMContentLoaded', () => {
         attachPackageEventListeners();
     }
     
-    // Función para actualizar SÓLO los precios de la UI cuando cambia la moneda
     function updatePackagesUI(currency) {
         if (!currentProductData || !currentProductData.paquetes) return;
 
@@ -136,12 +126,10 @@ document.addEventListener('DOMContentLoaded', () => {
             const priceVal = parseFloat(element.dataset[priceKeyDataset]);
             const priceFallback = parseFloat(element.dataset.priceUsd);
             
-            // ✅ MODIFICADO: Si la moneda es COP, muestra el valor real de COP siempre (incluido 0)
             let finalPrice;
             if (currency === 'COP') {
                 finalPrice = priceVal.toFixed(2);
             } else {
-                // Mantiene el respaldo a USD para otras monedas si es necesario
                 finalPrice = (priceVal > 0) ? priceVal.toFixed(2) : priceFallback.toFixed(2);
             }
             
@@ -149,7 +137,6 @@ document.addEventListener('DOMContentLoaded', () => {
         });
     }
 
-    // Función principal para cargar los detalles del producto
     async function loadProductDetails() {
         const slug = getSlugFromUrl();
         if (!slug) {
@@ -206,14 +193,36 @@ document.addEventListener('DOMContentLoaded', () => {
                         if(playerIdInput) playerIdInput.value = '';
                     }
                 }
-                
-                const initialCurrency = localStorage.getItem('selectedCurrency') || 'VES';
+
+                // 🆕 NUEVO: LÓGICA ESPECIAL PARA FREE FIRE
+                // Si es Free Fire, forzamos JPUSD y ocultamos el selector de moneda
+                let initialCurrency;
+                if (data.es_free_fire === true) {
+                    console.log('[FREE FIRE] Detectado. Forzando moneda JPUSD y ocultando selector.');
+                    
+                    // Forzamos JPUSD en localStorage
+                    localStorage.setItem('selectedCurrency', 'JPUSD');
+                    initialCurrency = 'JPUSD';
+                    
+                    // Añadimos la clase al body para ocultar el selector con CSS
+                    document.body.classList.add('hide-currency-selector');
+                    
+                    // Disparamos el evento para que otros scripts (como script.js) actualicen la UI
+                    window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: 'JPUSD' } }));
+                } else {
+                    initialCurrency = localStorage.getItem('selectedCurrency') || 'VES';
+                }
+                // 🔚 FIN LÓGICA FREE FIRE
                 
                 renderProductPackages(data, initialCurrency); 
 
-                window.addEventListener('currencyChanged', (event) => {
-                    updatePackagesUI(event.detail.currency);
-                });
+                // Solo escuchamos cambios de moneda si NO es Free Fire
+                // (así evitamos que un cambio externo rompa la moneda única de Free Fire)
+                if (data.es_free_fire !== true) {
+                    window.addEventListener('currencyChanged', (event) => {
+                        updatePackagesUI(event.detail.currency);
+                    });
+                }
 
             } else {
                 if (productContainer) {
@@ -257,6 +266,9 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemPriceJPUSD = selectedPackage.dataset.priceJpusd; 
             const itemPriceCOP = selectedPackage.dataset.priceCop;
             
+            // 🆕 NUEVO: Detectar si es Free Fire con recarga automática
+            const isFreeFireAuto = currentProductData && currentProductData.es_free_fire === true && currentProductData.recargas_america_id;
+            
             const cartItem = {
                 id: Date.now(), 
                 game: currentProductData ? currentProductData.nombre : 'Juego Desconocido',
@@ -266,7 +278,10 @@ document.addEventListener('DOMContentLoaded', () => {
                 priceVES: itemPriceVES, 
                 priceJPUSD: itemPriceJPUSD,
                 priceCOP: itemPriceCOP, 
-                requiresAssistance: currentProductData.require_id !== true 
+                requiresAssistance: currentProductData.require_id !== true,
+                // 🆕 NUEVO: Datos para la API de Recargas América
+                isFreeFireAutoRecharge: isFreeFireAuto,
+                recargasAmericaProductId: isFreeFireAuto ? currentProductData.recargas_america_id : null
             };
 
             if (window.addToCart) {
