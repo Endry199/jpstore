@@ -198,13 +198,32 @@ document.addEventListener('DOMContentLoaded', () => {
                 // 🆕 LÓGICA ESPECIAL PARA FREE FIRE
                 let initialCurrency;
                 if (data.es_free_fire === true) {
-                    console.log('[FREE FIRE] Detectado. Forzando moneda JPUSD y ocultando selector.');
+                    console.log('[FREE FIRE] Detectado. Forzando JPUSD, ocultando selector y carrito, cambiando texto del botón.');
                     
+                    // 1. Forzar moneda JPUSD
                     localStorage.setItem('selectedCurrency', 'JPUSD');
                     initialCurrency = 'JPUSD';
                     
+                    // 2. Ocultar el selector de moneda
                     document.body.classList.add('hide-currency-selector');
                     
+                    // 🆕 3. Ocultar el ícono del carrito
+                    const cartIcon = document.getElementById('cart-icon');
+                    if (cartIcon) {
+                        cartIcon.style.display = 'none';
+                        console.log('[FREE FIRE] Carrito oculto.');
+                    }
+                    
+                    // 🆕 4. Cambiar el texto del botón principal
+                    if (rechargeForm) {
+                        const submitButton = rechargeForm.querySelector('.recharge-button');
+                        if (submitButton) {
+                            submitButton.textContent = 'Proceder con la Recarga';
+                            console.log('[FREE FIRE] Texto del botón cambiado a "Proceder con la Recarga".');
+                        }
+                    }
+                    
+                    // 5. Disparar evento de cambio de moneda
                     window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: 'JPUSD' } }));
                 } else {
                     initialCurrency = localStorage.getItem('selectedCurrency') || 'VES';
@@ -280,17 +299,13 @@ document.addEventListener('DOMContentLoaded', () => {
                 recargasAmericaProductId: isFreeFireAuto ? parseInt(recargasAmericaId, 10) : null
             };
 
-            // 🆕 NUEVO: SI ES FREE FIRE AUTO → Guardar en transactionDetails y redirigir directo a payment.html
+            // 🆕 SI ES FREE FIRE AUTO → Guardar en transactionDetails y redirigir directo a payment.html
             if (isFreeFireAuto) {
                 console.log('[FREE FIRE] Enviando directo a payment.html (sin carrito)');
                 
-                // Guardar como transactionDetails en lugar de cartItems
                 localStorage.setItem('transactionDetails', JSON.stringify([cartItem]));
-                
-                // Opcional: limpiar cualquier carrito previo para evitar conflictos
                 localStorage.removeItem('cartItems');
                 
-                // Redirigir directo a payment
                 window.location.href = 'payment.html';
                 return;
             }
