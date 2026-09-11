@@ -1,7 +1,6 @@
 // load-product-details.js
 
 document.addEventListener('DOMContentLoaded', () => {
-    // Estas variables son accesibles por todas las funciones anidadas (closure)
     let selectedPackage = null;
     let currentProductData = null;
     const productContainer = document.getElementById('product-container');
@@ -70,7 +69,6 @@ document.addEventListener('DOMContentLoaded', () => {
             const vesPrice = parseFloat(pkg.precio_ves || 0).toFixed(2);
             const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
             const copPrice = parseFloat(pkg.precio_cop || 0).toFixed(2);
-            // 🆕 NUEVO: Guardamos el ID de Recargas América del paquete
             const recargasAmericaId = pkg.recargas_america_id || '';
 
             let displayPrice;
@@ -197,30 +195,23 @@ document.addEventListener('DOMContentLoaded', () => {
                     }
                 }
 
-                // 🆕 NUEVO: LÓGICA ESPECIAL PARA FREE FIRE
-                // Si es Free Fire, forzamos JPUSD y ocultamos el selector de moneda
+                // 🆕 LÓGICA ESPECIAL PARA FREE FIRE
                 let initialCurrency;
                 if (data.es_free_fire === true) {
                     console.log('[FREE FIRE] Detectado. Forzando moneda JPUSD y ocultando selector.');
                     
-                    // Forzamos JPUSD en localStorage
                     localStorage.setItem('selectedCurrency', 'JPUSD');
                     initialCurrency = 'JPUSD';
                     
-                    // Añadimos la clase al body para ocultar el selector con CSS
                     document.body.classList.add('hide-currency-selector');
                     
-                    // Disparamos el evento para que otros scripts (como script.js) actualicen la UI
                     window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: 'JPUSD' } }));
                 } else {
                     initialCurrency = localStorage.getItem('selectedCurrency') || 'VES';
                 }
-                // 🔚 FIN LÓGICA FREE FIRE
                 
                 renderProductPackages(data, initialCurrency); 
 
-                // Solo escuchamos cambios de moneda si NO es Free Fire
-                // (así evitamos que un cambio externo rompa la moneda única de Free Fire)
                 if (data.es_free_fire !== true) {
                     window.addEventListener('currencyChanged', (event) => {
                         updatePackagesUI(event.detail.currency);
@@ -268,10 +259,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemPriceVES = selectedPackage.dataset.priceVes; 
             const itemPriceJPUSD = selectedPackage.dataset.priceJpusd; 
             const itemPriceCOP = selectedPackage.dataset.priceCop;
-            // 🆕 NUEVO: Leer el ID de Recargas América DEL PAQUETE seleccionado
             const recargasAmericaId = selectedPackage.dataset.recargasAmericaId;
             
-            // 🆕 Detectar si es Free Fire con recarga automática (necesita ambos: es_free_fire y el ID del paquete)
             const isFreeFireAuto = currentProductData 
                 && currentProductData.es_free_fire === true 
                 && recargasAmericaId 
@@ -287,11 +276,26 @@ document.addEventListener('DOMContentLoaded', () => {
                 priceJPUSD: itemPriceJPUSD,
                 priceCOP: itemPriceCOP, 
                 requiresAssistance: currentProductData.require_id !== true,
-                // 🆕 Datos para la API de Recargas América (por paquete)
                 isFreeFireAutoRecharge: isFreeFireAuto,
                 recargasAmericaProductId: isFreeFireAuto ? parseInt(recargasAmericaId, 10) : null
             };
 
+            // 🆕 NUEVO: SI ES FREE FIRE AUTO → Guardar en transactionDetails y redirigir directo a payment.html
+            if (isFreeFireAuto) {
+                console.log('[FREE FIRE] Enviando directo a payment.html (sin carrito)');
+                
+                // Guardar como transactionDetails en lugar de cartItems
+                localStorage.setItem('transactionDetails', JSON.stringify([cartItem]));
+                
+                // Opcional: limpiar cualquier carrito previo para evitar conflictos
+                localStorage.removeItem('cartItems');
+                
+                // Redirigir directo a payment
+                window.location.href = 'payment.html';
+                return;
+            }
+
+            // Flujo normal (otros productos): agregar al carrito
             if (window.addToCart) {
                 window.addToCart(cartItem);
             } else {
