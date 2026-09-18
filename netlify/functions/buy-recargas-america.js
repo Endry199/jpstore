@@ -88,7 +88,7 @@ exports.handler = async function (event, context) {
         [fieldName]: String(redemption_id)
     };
 
-    // --- Llamada a la API de Recargas América (Catálogo Unificado) ---
+    // --- Llamada a la API de Recargas América (Catálogo Unaaaificado) ---
     try {
         console.log(`[RA] Enviando recarga (Catálogo). product_id=${product_id}, ${fieldName}=${redemption_id}`);
 
