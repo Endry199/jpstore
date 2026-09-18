@@ -1,27 +1,27 @@
 // netlify/functions/get-product-details.js
 const { createClient } = require('@supabase/supabase-js');
 
-exports.handler = async function(event, context) {
+exports.handler = async function (event, context) {
     if (event.httpMethod !== "GET") {
         return { statusCode: 405, body: "Method Not Allowed" };
     }
-    
+
     const slug = event.queryStringParameters.slug;
 
     if (!slug) {
-        return { 
-            statusCode: 400, 
-            body: JSON.stringify({ message: "Falta el 'slug' del producto." }) 
+        return {
+            statusCode: 400,
+            body: JSON.stringify({ message: "Falta el 'slug' del producto." })
         };
     }
 
     const supabaseUrl = process.env.SUPABASE_URL;
-    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY; 
-    
+    const supabaseAnonKey = process.env.SUPABASE_ANON_KEY;
+
     if (!supabaseUrl || !supabaseAnonKey) {
         console.error("Faltan variables de entorno de Supabase.");
-        return { 
-            statusCode: 500, 
+        return {
+            statusCode: 500,
             body: JSON.stringify({ message: "Error de configuración del servidor. Faltan credenciales de Supabase." })
         };
     }
@@ -31,7 +31,7 @@ exports.handler = async function(event, context) {
     try {
         // ⚠️ IMPORTANTE:
         // - De PRODUCTOS: solo columnas que existen ahí (NO recargas_america_id)
-        // - De PAQUETES: precios + recargas_america_id (esa sí existe aquí)
+        // - De PAQUETES: precios + recargas_america_id + required_fields
         const { data: producto, error } = await supabase
             .from('productos')
             .select(`
@@ -49,15 +49,16 @@ exports.handler = async function(event, context) {
                     precio_usdm,
                     precio_cop, 
                     orden,
-                    recargas_america_id
+                    recargas_america_id,
+                    required_fields
                 )
             `)
             .eq('slug', slug)
-            .maybeSingle(); 
-            
+            .maybeSingle();
+
         if (error) {
             console.error("Error de Supabase al obtener producto:", error);
-            throw new Error(error.message || "Error desconocido en la consulta a Supabase."); 
+            throw new Error(error.message || "Error desconocido en la consulta a Supabase.");
         }
 
         if (!producto) {
