@@ -4,7 +4,7 @@ const axios = require('axios');
 const RA_API_BASE = 'https://panel.recargasamerica.com/api/v1';
 
 // =========================================================
-// 🆕 NUEVA FUNCIÓN: Notificar al admin por Telegram cuando falla por falta de fondos
+// Notificar al admin por Telegram cuando falla por falta de fondos
 // =========================================================
 async function notifyAdminAboutBalance(errorMessage, productId, redemptionId, httpStatus) {
     const TELEGRAM_BOT_TOKEN = process.env.TELEGRAM_BOT_TOKEN;
@@ -15,7 +15,7 @@ async function notifyAdminAboutBalance(errorMessage, productId, redemptionId, ht
         return;
     }
 
-    const alertText = 
+    const alertText =
         `🚨 *ALERTA CRÍTICA — RECARGAS AMÉRICA* 🚨\n\n` +
         `⚠️ *No se pudo procesar una recarga por falta de fondos o stock.*\n\n` +
         `📦 *Producto (Recargas América):* \`${productId}\`\n` +
@@ -41,7 +41,7 @@ async function notifyAdminAboutBalance(errorMessage, productId, redemptionId, ht
     }
 }
 
-exports.handler = async function(event, context) {
+exports.handler = async function (event, context) {
     // Solo POST
     if (event.httpMethod !== "POST") {
         return { statusCode: 405, body: JSON.stringify({ message: "Method Not Allowed" }) };
@@ -66,7 +66,8 @@ exports.handler = async function(event, context) {
         return { statusCode: 400, body: JSON.stringify({ message: 'Body JSON inválido.' }) };
     }
 
-    const { product_id, redemption_id } = body;
+    // 🆕 NUEVO: Acepta required_field para saber si usar manual_id o player_id
+    const { product_id, redemption_id, required_field } = body;
 
     if (!product_id || !redemption_id) {
         return {
@@ -75,28 +76,37 @@ exports.handler = async function(event, context) {
         };
     }
 
-    // --- Llamada a la API de Recargas América ---
+    // 🆕 Determinar el campo correcto según lo que pida la API
+    // - required_field === 'manual_id' → enviar manual_id
+    // - required_field === 'player_id' → enviar player_id
+    // - por defecto → 'player_id'
+    const fieldName = required_field === 'manual_id' ? 'manual_id' : 'player_id';
+
+    // 🆕 Construir el body para /buy/catalog (Catálogo Unificado)
+    const requestBody = {
+        product_id: parseInt(product_id, 10),
+        quantity: 1,
+        [fieldName]: String(redemption_id)
+    };
+
+    // --- Llamada a la API de Recargas América (Catálogo Unificado) ---
     try {
-        console.log(`[RA] Enviando recarga. product_id=${product_id}, redemption_id=${redemption_id}`);
+        console.log(`[RA] Enviando recarga (Catálogo). product_id=${product_id}, ${fieldName}=${redemption_id}`);
 
         const response = await axios.post(
-            `${RA_API_BASE}/buy/pins`,
-            {
-                product_id: parseInt(product_id, 10),
-                redemption_id: String(redemption_id)
-            },
+            `${RA_API_BASE}/buy/catalog`,
+            requestBody,
             {
                 headers: {
                     'Authorization': `Bearer ${RA_API_KEY}`,
                     'Content-Type': 'application/json'
                 },
-                timeout: 30000 // 30 segundos de timeout
+                timeout: 30000
             }
         );
 
         console.log('[RA] Respuesta:', JSON.stringify(response.data));
 
-        // La API devuelve { success: true, data: { transaction_id, amount_charged, api_data } }
         if (response.data && response.data.success === true) {
             return {
                 statusCode: 200,
@@ -106,11 +116,9 @@ exports.handler = async function(event, context) {
                 })
             };
         } else {
-            // La API respondió pero con success: false
             const errMsg = response.data.error || 'La API de Recargas América rechazó la orden.';
             const errCode = response.data.code || 'RA_ERROR';
 
-            // 🆕 Si el error es por fondos/stock, alertar al admin
             if (errCode === 'PURCHASE_FAILED' || errMsg.toLowerCase().includes('saldo') || errMsg.toLowerCase().includes('stock')) {
                 await notifyAdminAboutBalance(errMsg, product_id, redemption_id, 422);
             }
@@ -128,37 +136,36 @@ exports.handler = async function(event, context) {
     } catch (error) {
         console.error('[RA] Error en la llamada:', error.message);
 
-        // Manejo de errores de la API
         if (error.response) {
-            // La API respondió con código de error
             const status = error.response.status;
             const data = error.response.data;
 
             console.error('[RA] Error response:', status, JSON.stringify(data));
 
-            // Códigos de error documentados
             let errorMessage = 'Error al procesar la recarga.';
             let shouldNotifyAdmin = false;
 
             if (status === 401) {
                 errorMessage = 'API Key inválida o desactivada.';
-                shouldNotifyAdmin = true; // También avisamos porque requiere acción del admin
+                shouldNotifyAdmin = true;
             } else if (status === 403) {
                 errorMessage = 'IP no permitida o cuenta bloqueada.';
                 shouldNotifyAdmin = true;
             } else if (status === 422) {
                 errorMessage = data.error || 'Saldo insuficiente o sin stock.';
-                shouldNotifyAdmin = true; // 🆕 Falta de fondos
+                shouldNotifyAdmin = true;
             } else if (status === 409) {
                 errorMessage = 'Compra duplicada (ya fue procesada).';
             } else if (status === 502) {
                 errorMessage = 'El proveedor rechazó la orden. Saldo devuelto.';
                 shouldNotifyAdmin = true;
+            } else if (status === 404) {
+                errorMessage = 'Endpoint deshabilitado. Migrar al catálogo unificado.';
+                shouldNotifyAdmin = true;
             } else if (data && data.error) {
                 errorMessage = data.error;
             }
 
-            // 🆕 Notificar al admin si aplica
             if (shouldNotifyAdmin) {
                 await notifyAdminAboutBalance(errorMessage, product_id, redemption_id, status);
             }
@@ -173,7 +180,6 @@ exports.handler = async function(event, context) {
             };
         }
 
-        // Error de red o timeout
         return {
             statusCode: 500,
             body: JSON.stringify({

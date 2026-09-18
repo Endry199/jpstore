@@ -70,6 +70,7 @@ document.addEventListener('DOMContentLoaded', () => {
             const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
             const copPrice = parseFloat(pkg.precio_cop || 0).toFixed(2);
             const recargasAmericaId = pkg.recargas_america_id || '';
+            const requiredField = pkg.required_fields || 'player_id';
 
             let displayPrice;
             if (currency === 'VES') {
@@ -91,6 +92,7 @@ document.addEventListener('DOMContentLoaded', () => {
                     data-price-jpusd="${jpusdPrice}"
                     data-price-cop="${copPrice}" 
                     data-recargas-america-id="${recargasAmericaId}"
+                    data-required-field="${requiredField}"
                 >
                     <div class="package-name">${pkg.nombre_paquete}</div>
                     <div class="package-price">${currencySymbol} ${displayPrice}</div>
@@ -279,7 +281,8 @@ document.addEventListener('DOMContentLoaded', () => {
             const itemPriceJPUSD = selectedPackage.dataset.priceJpusd; 
             const itemPriceCOP = selectedPackage.dataset.priceCop;
             const recargasAmericaId = selectedPackage.dataset.recargasAmericaId;
-            
+            const requiredField = selectedPackage.dataset.requiredField || 'player_id';
+
             const isFreeFireAuto = currentProductData 
                 && currentProductData.es_free_fire === true 
                 && recargasAmericaId 
