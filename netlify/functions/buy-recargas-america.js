@@ -16,15 +16,15 @@ async function notifyAdminAboutBalance(errorMessage, productId, redemptionId, ht
     }
 
     const alertText =
-        `🚨 *ALERTA CRÍTICA — RECARGAS AMÉRICA* 🚨\n\n` +
-        `⚠️ *No se pudo procesar una recarga por falta de fondos o stock.*\n\n` +
-        `📦 *Producto (Recargas América):* \`${productId}\`\n` +
-        `👤 *Redemption ID (Jugador):* \`${redemptionId}\`\n` +
-        `💬 *Mensaje de la API:* ${errorMessage}\n` +
-        `🔢 *HTTP Status:* ${httpStatus}\n\n` +
-        `🔴 *ACCIÓN REQUERIDA:*\n` +
+        `🚨 <b>ALERTA CRÍTICA — RECARGAS AMÉRICA</b> 🚨\n\n` +
+        `⚠️ <b>No se pudo procesar una recarga por falta de fondos o stock.</b>\n\n` +
+        `📦 <b>Producto:</b> <code>${productId}</code>\n` +
+        `👤 <b>Redemption ID:</b> <code>${redemptionId}</code>\n` +
+        `💬 <b>Mensaje de la API:</b> ${errorMessage}\n` +
+        `🔢 <b>HTTP Status:</b> ${httpStatus}\n\n` +
+        `🔴 <b>ACCIÓN REQUERIDA:</b>\n` +
         `Recarga saldo en tu panel de Recargas América lo antes posible.\n\n` +
-        `_Nota: El saldo del cliente fue REEMBOLSADO automáticamente (si aplicó). No se perdió dinero del cliente._`;
+        `<i>Nota: El saldo del cliente fue REEMBOLSADO automáticamente (si aplicó). No se perdió dinero del cliente.</i>`;
 
     try {
         await axios.post(
@@ -32,7 +32,7 @@ async function notifyAdminAboutBalance(errorMessage, productId, redemptionId, ht
             {
                 chat_id: TELEGRAM_CHAT_ID,
                 text: alertText,
-                parse_mode: 'Markdown'
+                parse_mode: 'HTML'
             }
         );
         console.log('[RA] ✅ Alerta de fondos enviada a Telegram.');
@@ -66,7 +66,6 @@ exports.handler = async function (event, context) {
         return { statusCode: 400, body: JSON.stringify({ message: 'Body JSON inválido.' }) };
     }
 
-    // 🆕 NUEVO: Acepta required_field para saber si usar manual_id o player_id
     const { product_id, redemption_id, required_field } = body;
 
     if (!product_id || !redemption_id) {
@@ -76,13 +75,13 @@ exports.handler = async function (event, context) {
         };
     }
 
-    // 🆕 Determinar el campo correcto según lo que pida la API
+    // Determinar el campo correcto según lo que pida la API
     // - required_field === 'manual_id' → enviar manual_id
     // - required_field === 'player_id' → enviar player_id
     // - por defecto → 'player_id'
     const fieldName = required_field === 'manual_id' ? 'manual_id' : 'player_id';
 
-    // 🆕 Construir el body para /buy/catalog (Catálogo Unificado)
+    // Construir el body para /buy/catalog (Catálogo Unificado)
     const requestBody = {
         product_id: parseInt(product_id, 10),
         quantity: 1,

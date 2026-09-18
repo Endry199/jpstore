@@ -14,32 +14,32 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function handlePackageClick() {
         const packageOptions = document.querySelectorAll('.package-option');
-        
+
         packageOptions.forEach(opt => opt.classList.remove('selected'));
-        
+
         this.classList.add('selected');
         selectedPackage = this;
-        
+
         console.log('Paquete seleccionado:', selectedPackage.dataset.packageName);
     }
-    
+
     function attachPackageEventListeners() {
         const packageOptions = document.querySelectorAll('.package-option');
-        
+
         packageOptions.forEach(option => {
-            option.removeEventListener('click', handlePackageClick); 
+            option.removeEventListener('click', handlePackageClick);
             option.addEventListener('click', handlePackageClick);
         });
-        
+
         if (packageOptions.length > 0) {
             let shouldSelectDefault = true;
-            
+
             if (selectedPackage && document.body.contains(selectedPackage)) {
                 packageOptions.forEach(opt => opt.classList.remove('selected'));
                 selectedPackage.classList.add('selected');
                 shouldSelectDefault = false;
-            } 
-            
+            }
+
             if (shouldSelectDefault) {
                 packageOptions[0].classList.add('selected');
                 selectedPackage = packageOptions[0];
@@ -49,13 +49,13 @@ document.addEventListener('DOMContentLoaded', () => {
 
     function renderProductPackages(data, currency) {
         const packageOptionsGrid = document.getElementById('package-options-grid');
-        
+
         if (!packageOptionsGrid) {
             console.error("El contenedor de paquetes (#package-options-grid) no fue encontrado en el HTML.");
             return;
         }
-        
-        packageOptionsGrid.innerHTML = ''; 
+
+        packageOptionsGrid.innerHTML = '';
 
         if (!data.paquetes || data.paquetes.length === 0) {
             packageOptionsGrid.innerHTML = '<p class="empty-message">Aún no hay paquetes de recarga disponibles para este juego.</p>';
@@ -67,7 +67,7 @@ document.addEventListener('DOMContentLoaded', () => {
         data.paquetes.forEach(pkg => {
             const usdPrice = parseFloat(pkg.precio_usd || 0).toFixed(2);
             const vesPrice = parseFloat(pkg.precio_ves || 0).toFixed(2);
-            const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2); 
+            const jpusdPrice = parseFloat(pkg.precio_usdm || 0).toFixed(2);
             const copPrice = parseFloat(pkg.precio_cop || 0).toFixed(2);
             const recargasAmericaId = pkg.recargas_america_id || '';
             const requiredField = pkg.required_fields || 'player_id';
@@ -79,7 +79,7 @@ document.addEventListener('DOMContentLoaded', () => {
                 displayPrice = jpusdPrice;
             } else if (currency === 'COP') {
                 displayPrice = copPrice;
-            } else { 
+            } else {
                 displayPrice = usdPrice;
             }
 
@@ -100,26 +100,26 @@ document.addEventListener('DOMContentLoaded', () => {
             `;
             packageOptionsGrid.insertAdjacentHTML('beforeend', packageHtml);
         });
-        
+
         attachPackageEventListeners();
     }
-    
+
     function updatePackagesUI(currency) {
         if (!currentProductData || !currentProductData.paquetes) return;
 
         const packageOptionsGrid = document.getElementById('package-options-grid');
-        if (!packageOptionsGrid) return; 
-        
+        if (!packageOptionsGrid) return;
+
         const currencySymbol = (currency === 'VES') ? 'Bs.' : (currency === 'COP' ? 'COP$' : '$');
 
         const packageElements = packageOptionsGrid.querySelectorAll('.package-option');
         packageElements.forEach(element => {
-            
+
             let priceKeyDataset;
             if (currency === 'VES') {
                 priceKeyDataset = 'priceVes';
             } else if (currency === 'JPUSD') {
-                priceKeyDataset = 'priceJpusd'; 
+                priceKeyDataset = 'priceJpusd';
             } else if (currency === 'COP') {
                 priceKeyDataset = 'priceCop';
             } else {
@@ -128,14 +128,14 @@ document.addEventListener('DOMContentLoaded', () => {
 
             const priceVal = parseFloat(element.dataset[priceKeyDataset]);
             const priceFallback = parseFloat(element.dataset.priceUsd);
-            
+
             let finalPrice;
             if (currency === 'COP') {
                 finalPrice = priceVal.toFixed(2);
             } else {
                 finalPrice = (priceVal > 0) ? priceVal.toFixed(2) : priceFallback.toFixed(2);
             }
-            
+
             element.querySelector('.package-price').textContent = `${currencySymbol} ${finalPrice}`;
         });
     }
@@ -144,7 +144,7 @@ document.addEventListener('DOMContentLoaded', () => {
         const slug = getSlugFromUrl();
         if (!slug) {
             if (productContainer) {
-                 productContainer.innerHTML = '<h2 class="error-message">❌ Error: No se especificó el juego.</h2><p style="text-align:center;"><a href="index.html">Volver a la página principal</a></p>';
+                productContainer.innerHTML = '<h2 class="error-message">❌ Error: No se especificó el juego.</h2><p style="text-align:center;"><a href="index.html">Volver a la página principal</a></p>';
             }
             const pageTitle = document.getElementById('page-title');
             if (pageTitle) pageTitle.textContent = 'Error - JP STORE';
@@ -153,17 +153,17 @@ document.addEventListener('DOMContentLoaded', () => {
 
         try {
             const response = await fetch(`/.netlify/functions/get-product-details?slug=${slug}`);
-            
+
             if (!response.ok) {
                 const errorData = await response.json();
                 throw new Error(`Error ${response.status}: ${errorData.message}`);
             }
 
             const data = await response.json();
-            
+
             if (data) {
-                currentProductData = data; 
-                
+                currentProductData = data;
+
                 const pageTitle = document.getElementById('page-title');
                 if (pageTitle) pageTitle.textContent = `${data.nombre} - JP STORE`;
 
@@ -178,14 +178,14 @@ document.addEventListener('DOMContentLoaded', () => {
                     bannerImage.src = data.banner_url || 'images/default_banner.jpg';
                     bannerImage.alt = data.nombre;
                 }
-                
+
                 const playerIdInputGroup = document.getElementById('player-id-input-group');
                 const whatsappMessage = document.getElementById('whatsapp-info-message');
                 const stepOneTitle = document.getElementById('step-one-title');
 
                 if (playerIdInputGroup && whatsappMessage && stepOneTitle) {
                     if (data.require_id === true) {
-                        playerIdInputGroup.style.display = 'block'; 
+                        playerIdInputGroup.style.display = 'block';
                         whatsappMessage.style.display = 'none';
                         stepOneTitle.textContent = 'Paso 1: Ingresa tu ID';
                     } else {
@@ -193,7 +193,7 @@ document.addEventListener('DOMContentLoaded', () => {
                         whatsappMessage.style.display = 'block';
                         stepOneTitle.textContent = 'Paso 1: Asistencia Requerida';
                         const playerIdInput = document.getElementById('player-id-input');
-                        if(playerIdInput) playerIdInput.value = '';
+                        if (playerIdInput) playerIdInput.value = '';
                     }
                 }
 
@@ -201,21 +201,21 @@ document.addEventListener('DOMContentLoaded', () => {
                 let initialCurrency;
                 if (data.es_free_fire === true) {
                     console.log('[FREE FIRE] Detectado. Forzando JPUSD, ocultando selector y carrito, cambiando texto del botón.');
-                    
+
                     // 1. Forzar moneda JPUSD
                     localStorage.setItem('selectedCurrency', 'JPUSD');
                     initialCurrency = 'JPUSD';
-                    
+
                     // 2. Ocultar el selector de moneda
                     document.body.classList.add('hide-currency-selector');
-                    
+
                     // 🆕 3. Ocultar el ícono del carrito
                     const cartIcon = document.getElementById('cart-icon');
                     if (cartIcon) {
                         cartIcon.style.display = 'none';
                         console.log('[FREE FIRE] Carrito oculto.');
                     }
-                    
+
                     // 🆕 4. Cambiar el texto del botón principal
                     if (rechargeForm) {
                         const submitButton = rechargeForm.querySelector('.recharge-button');
@@ -224,14 +224,14 @@ document.addEventListener('DOMContentLoaded', () => {
                             console.log('[FREE FIRE] Texto del botón cambiado a "Proceder con la Recarga".');
                         }
                     }
-                    
+
                     // 5. Disparar evento de cambio de moneda
                     window.dispatchEvent(new CustomEvent('currencyChanged', { detail: { currency: 'JPUSD' } }));
                 } else {
                     initialCurrency = localStorage.getItem('selectedCurrency') || 'VES';
                 }
-                
-                renderProductPackages(data, initialCurrency); 
+
+                renderProductPackages(data, initialCurrency);
 
                 if (data.es_free_fire !== true) {
                     window.addEventListener('currencyChanged', (event) => {
@@ -254,7 +254,7 @@ document.addEventListener('DOMContentLoaded', () => {
             if (pageTitle) pageTitle.textContent = 'Error de Carga - JP STORE';
         }
     }
-    
+
     // 3. Manejo del envío del formulario
     if (rechargeForm) {
         rechargeForm.addEventListener('submit', (e) => {
@@ -266,7 +266,7 @@ document.addEventListener('DOMContentLoaded', () => {
             }
 
             const playerIdInput = document.getElementById('player-id-input');
-            const playerId = playerIdInput ? playerIdInput.value.trim() : ''; 
+            const playerId = playerIdInput ? playerIdInput.value.trim() : '';
 
             if (currentProductData && currentProductData.require_id === true) {
                 if (!playerId) {
@@ -274,41 +274,43 @@ document.addEventListener('DOMContentLoaded', () => {
                     return;
                 }
             }
-            
+
             const packageName = selectedPackage.dataset.packageName;
-            const itemPriceUSD = selectedPackage.dataset.priceUsd; 
-            const itemPriceVES = selectedPackage.dataset.priceVes; 
-            const itemPriceJPUSD = selectedPackage.dataset.priceJpusd; 
+            const itemPriceUSD = selectedPackage.dataset.priceUsd;
+            const itemPriceVES = selectedPackage.dataset.priceVes;
+            const itemPriceJPUSD = selectedPackage.dataset.priceJpusd;
             const itemPriceCOP = selectedPackage.dataset.priceCop;
             const recargasAmericaId = selectedPackage.dataset.recargasAmericaId;
             const requiredField = selectedPackage.dataset.requiredField || 'player_id';
 
-            const isFreeFireAuto = currentProductData 
-                && currentProductData.es_free_fire === true 
-                && recargasAmericaId 
+            const isFreeFireAuto = currentProductData
+                && currentProductData.es_free_fire === true
+                && recargasAmericaId
                 && recargasAmericaId !== '';
-            
+
             const cartItem = {
-                id: Date.now(), 
+                id: Date.now(),
                 game: currentProductData ? currentProductData.nombre : 'Juego Desconocido',
-                playerId: playerId, 
+                playerId: playerId,
                 packageName: packageName,
-                priceUSD: itemPriceUSD, 
-                priceVES: itemPriceVES, 
+                priceUSD: itemPriceUSD,
+                priceVES: itemPriceVES,
                 priceJPUSD: itemPriceJPUSD,
-                priceCOP: itemPriceCOP, 
+                priceCOP: itemPriceCOP,
                 requiresAssistance: currentProductData.require_id !== true,
                 isFreeFireAutoRecharge: isFreeFireAuto,
-                recargasAmericaProductId: isFreeFireAuto ? parseInt(recargasAmericaId, 10) : null
+                recargasAmericaProductId: isFreeFireAuto ? parseInt(recargasAmericaId, 10) : null,
+                requiredField: requiredField
             };
 
             // 🆕 SI ES FREE FIRE AUTO → Guardar en transactionDetails y redirigir directo a payment.html
             if (isFreeFireAuto) {
                 console.log('[FREE FIRE] Enviando directo a payment.html (sin carrito)');
-                
+                console.log('[FREE FIRE] requiredField:', requiredField);
+
                 localStorage.setItem('transactionDetails', JSON.stringify([cartItem]));
                 localStorage.removeItem('cartItems');
-                
+
                 window.location.href = 'payment.html';
                 return;
             }
